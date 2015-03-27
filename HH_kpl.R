@@ -42,27 +42,12 @@ lt <- function(from, to){
     lt
 }
 
-# Även befintliga ledtider ska ligga i intervallet 0-365 dagar
-limit_zdiff <- function(x){
-    ifelse(x %in% 0:365, x, NA)
+
+# är första elementet det minsta av två
+first_first <- function(x){
+    if (all(is.na(x))) NA else if (is.na(x[1])) FALSE else x[1] == min(x, na.rm = TRUE)
 }
 
-
-# Hitta vilken behandling (kir/ickekir som gavs först)
-# x är data frame där första kolumnen är kirurgisk datum, andra icke kir datum
-onk_beh_first <- function(x){
-    !all(is.na(x)) && x[2] < x[1]
-}
-kir_beh_first <- function(x){
-    !all(is.na(x)) && x[1] <= x[2]
-}
-
-# Identifiera de poster som tillhör inloggad enhet i INCA
-# sjh = variabelnamn på den sjukhuskod som identifierar sjukhuset
-# klk = variabelnamn på den klinikkod som identifierar kliniken
-sjh_klk <- function(df, sjh, klk){
-    df$userparentunitcode == sjh & df$userunitcode == klk
-}
 
 #########################################################################################
 #                                                                                       #
@@ -89,6 +74,12 @@ datum_variabler <- c("a_remdat",
 df[datum_variabler] <- lapply(df[datum_variabler],
                              function(x) as.Date(x, format = "%Y-%m-%d")
                        )
+
+## Boolska variabler ska vara boolska
+df <- df %>% mutate(
+    klinikbehorighet = as.logical(klinikbehorighet),
+    regionbehorighet = as.logical(regionbehorighet)
+)
 
 
 
@@ -133,22 +124,6 @@ df <- df %>%
                                         a_icd10_gruppnamn  !=  "1 Läpp",
                                         a_multkonf_beskrivning, NA),
 
-        ## Kan den inloggade kliniken knytas till behandling etc?
-        behandlande_klinik =
-            sjh_klk(., a_behsjh1, a_behkli1) |
-            sjh_klk(., a_behsjh2, a_bekli2),
-        beslutande_klinik = sjh_klk(., a_beslsjh, a_beslkli),
-        utredande_klinik = sjh_klk(., autrsjh, autrklk),
-        klinik =
-            sjh_klk(., a_anmsjh, a_anmkli) |
-            sjh_klk(., b_anmsjh, b_anmkli) |
-            sjh_klk(., b_onk_inrappsjh, b_onk_inrappklk) |
-            sjh_klk(., u_uppfsjh, b_uppfkli) |
-            behandlande_klinik |
-            beslutande_klinik |
-            utredande_klinik,
-        region = region_namn == userregionname,
-
         ## Årtalsvariabler
         ar_behandlingsstart = format(behandlingsstart, format = "%Y"),
         ar_beslut = format(a_besldat, format = "%Y"),
@@ -160,14 +135,14 @@ df <- df %>%
         ind1  = lt(a_remdat, behandlingsstart)              <= 40,
         ind2  = lt(a_besok, behandlingsstart)               <= 35,
         ind3  = lt3                                         <= 15,
-        ind4  = ifelse(apply(data.frame(opdat, b_behstart),
-                    1, onk_beh_first), lt3, NA)             <= 20,
+        ind4  = ifelse(apply(data.frame(b_behstart, opdat),
+                    1, first_first), lt3, NA)               <= 20,
         ind5  = ifelse(apply(data.frame(opdat, b_behstart),
-                    1, kir_beh_first), lt3, NA)             <= 12,
-        ind6 = limit_zdiff(zdiff_behbeslut_remiss)          <= 25,
-        ind7 = limit_zdiff(zdiff_önh_remiss)                <= 5,
-        ind8 = limit_zdiff(zdiff_px_önh)                    <= 3,
-        ind9 = limit_zdiff(zdiff_cytpad_px)                 <= 3,
+                    1, first_first), lt3, NA)               <= 12,
+        ind6 =  lt(a_remdat, a_besldat)                     <= 25,
+        ind7 =  lt(a_remdat, a_besok)                       <= 5,
+        ind8 =  lt(a_besok, a_cytdat)                       <= 3,
+        ind9 =  lt(a_cytdat, a_cytpad)                      <= 3,
         ind10 = a_multkonf_beskrivning                      == "Ja"
     )
 
@@ -179,17 +154,17 @@ df <- df %>%
 #                                                                                       #
 #########################################################################################
 
-indikator <- function(ind, klinikindikator = df$klinik,
-                      ar, region = df$region,
-                      name, l1 = 50, l2 = 80,
-                      description = "",
-                      nuvarande_ar = NUVARANDE_AR){
+indikator <- function(ind, ar, name, l1 = 50, l2 = 80,
+                      description = ""){
+
+    # Indikator. kan fallet klassas som "iår"
+    iar <- ar == NUVARANDE_AR
 
     ## Plocka fram historiska klinikdata
-    historiska_ar <- data_frame(ind = ind[klinikindikator], ar = ar[klinikindikator]) %>%
+    historiska_ar <- data_frame(ind = ind[df$klinikbehorighet], ar = ar[df$klinikbehorighet]) %>%
         group_by(ar) %>%
         summarise(andel = mean(ind, na.rm = TRUE)) %>%
-        filter(ar %in% (nuvarande_ar - 4):(nuvarande_ar - 1)) %>%
+        filter(ar %in% (NUVARANDE_AR - 4):(NUVARANDE_AR - 1)) %>%
         select(andel) %>%
         unlist() %>%
         unname() %>%
@@ -197,15 +172,23 @@ indikator <- function(ind, klinikindikator = df$klinik,
         round() %>%
         ifelse(!is.nan(.) & !is.na(.) , ., 0)
 
+    ## Hjälpfunktioner för att beräkna täljare och nämnare baserat på nivå
+    num <- function(behorighet = TRUE){
+        sum(ind[behorighet & iar], na.rm = TRUE)
+    }
+    den <- function(behorighet = TRUE){
+        sum(!is.na(ind[behorighet & iar]))
+    }
+
     ## Konstruera objekt med all info för ledtiden
     data_frame(
         name        = name,
-        klinnum     = sum(ind[klinikindikator & ar == nuvarande_ar], na.rm = TRUE),
-        klinden     = sum(!is.na(ind[klinikindikator & ar == nuvarande_ar])),
-        regnum      = sum(ind[region & ar == nuvarande_ar], na.rm = TRUE),
-        regden      = sum(!is.na(ind[region & ar == nuvarande_ar])),
-        riknum      = sum(ind[ar == nuvarande_ar], na.rm = TRUE),
-        rikden      = sum(!is.na(ind[ar == nuvarande_ar])),
+        klinnum     = num(df$klinikbehorighet),
+        klinden     = den(df$klinikbehorighet),
+        regnum      = num(df$regionbehorighet),
+        regden      = den(df$regionbehorighet),
+        riknum      = num(),
+        rikden      = den(),
         history1    = historiska_ar[1],
         history2    = historiska_ar[2],
         history3    = historiska_ar[3],
@@ -222,17 +205,23 @@ indikatordefenitioner <-
         # indikator 1
         indikator(df$ind1, ar = df$ar_behandlingsstart,
                   name = "Remissankomst till behandlingsstart",
-                  l1 = 50, l2 = 80),
+                  l1 = 50, l2 = 80,
+                  description = ""
+        ),
 
         # indikator 2
         indikator(df$ind2, ar = df$ar_behandlingsstart,
                   name = "Första besök på ÖNH-klinik till behandlingsstart ",
-                  l1 = 50, l2 = 80),
+                  l1 = 50, l2 = 80,
+                  description = ""
+        ),
 
         # indikator 3
         indikator(df$ind3, ar = df$ar_behandlingsstart,
                   name = "Behandlingsbeslut till behandlingsstart ",
-                  l1 = 50, l2 = 80),
+                  l1 = 50, l2 = 80,
+                  description = ""
+        ),
 
         # indikator 4
         indikator(df$ind4, ar = df$ar_behandlingsstart,
@@ -242,7 +231,9 @@ indikatordefenitioner <-
         # indikator 5
         indikator(df$ind5, ar = df$ar_behandlingsstart,
                   name = "Behandlingsbeslut till kirurgi",
-                  l1 = 50, l2 = 80),
+                  l1 = 50, l2 = 80,
+                  description = ""
+        ),
 
         # indikator 6
         indikator(df$ind6, ar = df$ar_beslut,
@@ -252,22 +243,30 @@ indikatordefenitioner <-
         # indikator 7
         indikator(df$ind7, ar = df$ar_besok,
                   name = "Remissankomst till första besök",
-                  l1 = 50, l2 = 80),
+                  l1 = 50, l2 = 80,
+                  description = ""
+        ),
 
         # indikator 8
         indikator(df$ind8, ar = df$ar_cytdat,
                   name = "Första besök till cytologi/biopsi ",
-                  l1 = 50, l2 = 80),
+                  l1 = 50, l2 = 80,
+                  description = ""
+        ),
 
         # indikator 9
         indikator(df$ind9, ar = df$ar_cytpad,
                   name = "Biopsi till Cyt/PAD svar ",
-                  l1 = 50, l2 = 80),
+                  l1 = 50, l2 = 80,
+                  description = ""
+        ),
 
         # indikator 10
         indikator(df$ind10, ar = df$ar_beslut,
                   name = "Andel beslut på multidisciplinär konferens ",
-                  l1 = 95, l2 = 98)
+                  l1 = 95, l2 = 98,
+                  description = ""
+        )
     )
 
 

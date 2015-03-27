@@ -1,0 +1,232 @@
+﻿		body {
+			font-family:arial; 
+			font-size:12px;
+			color:#000000;
+			text-align:left;
+			margin:0px 0px 0px 0px;
+		}
+		a {
+			text-decoration:none;
+			color:inherit;
+			cursor: pointer;
+		}
+		table { 
+			margin:0px 0px 0px 0px;
+			border-collapse:collapse;
+		}
+		td {
+			vertical-align:middle;
+			padding:5px 5px;
+		}
+		td.margin {
+			width:40px;
+		}
+		.graytext {
+			color:#414D56;
+		}
+		table.headTable {
+			width:960px;
+			background-color:#272E34;
+			color:#FFFFFF;
+		}
+		table.headTable td { 
+			border:1px solid #414D56;
+		}
+		table.headTable td.dateclinic {
+			font-size:14px;
+			font-weight:bold;
+			width:340px;
+		}
+		table.headTable td.nopat {
+			width:150px;
+			text-align:center;
+		}
+		table.headTable td.helppdf {
+			width:20px;
+			text-align:center;
+		}
+		table.bodyTable {
+			width:960px;
+		}
+		table.bodyTable tr { 
+			border-bottom:1px solid #F0F0F0;
+		}
+		table.bodyTable tr.divider { 
+			border-bottom:1px solid #414D56;
+		}
+		table.bodyTable td.margin {
+			border-bottom:1px solid #FFFFFF;
+		}
+		table.bodyTable td.indheadline {
+			font-size:14px;
+			font-weight:bold;
+			width:340px;
+			height:30px;
+		}
+		table.bodyTable td.indsign {
+			width:50px;
+			text-align:center;
+		}
+		table.bodyTable td.indtext {
+			width:290px;
+		}
+		table.bodyTable td.indpat {
+			width:70px;
+			text-align:right;
+		}
+		table.bodyTable td.indpct {
+			width:45px;
+			text-align:right;
+		}
+		table.bodyTable td.fig {
+			width:140px;
+		}
+		table.bodyTable td.indplac {
+			width:55px;
+			text-align:right;
+		}
+		table.bodyTable td.indsumnum {
+			width:50px;
+			height:25px;
+			text-align:center;
+			background-color:#272E34;
+			color:#FFFFFF;
+			font-size:20px;
+			font-weight:bold;
+		}
+		table.bodyTable td.indsumtxt {
+			background-color:#53585E;
+			color:#FFFFFF;
+			font-size:14px;
+			font-weight:bold;
+		}
+		table.bodyTable td.indsumfill {
+			background-color:#53585E;
+		}
+		table.descrTable {
+			width:960px;
+			line-height:110%;
+		}
+		table.explaineTable {
+			width:960px;
+			margin-top:5px;
+		}
+		table.explaineTable td.leftborder1 {
+			width:5px;
+			background-color:#FFFFFF;
+			padding:0px;
+		}
+		table.explaineTable td.leftborder2 {
+			width:10px;
+			background-color:#2D669B;
+			padding:0px;
+		}
+		table.explaineTable td.header {
+			font-size:12px;
+			font-weight:bold;
+			padding-left:20px;
+		}
+		table.explaineTable td.info1 {
+			width:382px;
+			padding:0px 20px 10px 20px;
+			vertical-align:top;
+		}
+		table.explaineTable td.info2 {
+			width:383px;
+			padding:0px 20px 10px 20px;
+			vertical-align:top;
+		}
+		table.moreInfoTable {
+			width:960px;
+			margin-top:10px;
+			background-color:#F0F0F0;
+			color:#9E9E9E;
+			border-top:1px solid #9E9E9E;
+		}
+		table.helpTable {
+			display:none;
+			width:960px;
+		}
+		div.nopat {
+			font-size:36px;
+			font-weight:bold;
+		}
+		div.shorttitle {
+			font-size:12px;
+			font-weight:bold;
+			padding:2px 0px;
+		}
+		div.longtitle {
+			font-size:10px;
+			color:#414D56;
+			padding:2px 0px;
+		}
+		div.indexDescriptionTitle {
+			margin:10px 0px 0px 0px;
+			font-size:12px;
+			font-weight:bold;
+		}
+		div.indexDescriptionSubTitle {
+			margin:10px 0px 0px 0px;
+			font-size:10px;
+			font-weight:bold;
+		}
+		div.indexDescription {
+			margin:5px 0px 0px 0px;
+			font-size:10px;
+			color:#414D56;
+		}
+		span.plac1 {
+			font-size:18px;
+			font-weight:bold;
+			color:#2C669B;
+		}
+		span.plac2 {
+			font-size:14px;
+			color:#2C669B;
+		}
+		.infolink:before
+		{
+			content:'?';
+			display: inline-block;
+			font-weight:bold;
+			width: 2.25ex;
+			height: 2.25ex;
+			line-height: 2.25ex;
+			border-radius: 2.25ex;
+			padding:1.5px;
+			background:#272E34;
+			border:2px solid #FFFFFF;
+			text-decoration: none;
+		}
+		.infolink:hover:before
+		{
+			color:#272E34;
+			background:#FFFFFF;
+			border-color:#FFFFFF;
+			text-decoration:none;
+		}
+		a.infolink {
+			position: relative;
+		}
+		a.infolink > div {
+			padding:5px 5px;
+			background-color:#FFFFFF;
+			border:1px solid #2C669B;
+			display:none;
+			position:absolute;
+			bottom:-305px;
+			left:-200px;
+			margin-left:-205px;
+			width:400px;
+			height:300px;
+			z-index:6;
+		}
+		/*@media print {
+			.break {
+				page-break-before:always;
+			}
+			table.helpTable {
+				display:inline;
+			}
+		}*/

@@ -1,0 +1,12 @@
+.Rproj.user
+.Rhistory
+.RData
+
+
+KPLINCA_original_fran_chenyang/*
+inca_documents/*
+incadata.csv
+*.xlsx
+*.png
+output.html
+*.doc

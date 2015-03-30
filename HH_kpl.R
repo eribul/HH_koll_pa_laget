@@ -61,6 +61,7 @@ df[faktorer] <- lapply(df[faktorer], as.character)
 
 ## Datum ska vara datum
 datum_variabler <- c("a_remdat",
+                     "a_diadat",
                      "a_cytdat",
                      "a_cytpad",
                      "a_besok",
@@ -80,22 +81,6 @@ df <- df %>% mutate(
     klinikbehorighet = as.logical(klinikbehorighet),
     regionbehorighet = as.logical(regionbehorighet)
 )
-
-
-
-#########################################################################################
-#                                                                                       #
-#                          Numeriska uppgifter till sidhuvudet                          #
-#                                                                                       #
-#########################################################################################
-
-
-## Uppgifterna i sidhuvudet
-klin   <- paste0("\"", unique(df$userposname), "\"")
-diag   <- 999
-beh    <- 999
-prim   <- 999
-år     <- NUVARANDE_AR
 
 
 
@@ -125,6 +110,7 @@ df <- df %>%
                                         a_multkonf_beskrivning, NA),
 
         ## Årtalsvariabler
+        ar_remiss = format(a_remdat, format = "%Y"),
         ar_behandlingsstart = format(behandlingsstart, format = "%Y"),
         ar_beslut = format(a_besldat, format = "%Y"),
         ar_besok  = format(a_besok, format = "%Y"),
@@ -206,69 +192,95 @@ indikatordefenitioner <-
         indikator(df$ind1, ar = df$ar_behandlingsstart,
                   name = "Remissankomst till behandlingsstart",
                   l1 = 50, l2 = 80,
-                  description = ""
+                  description = "Andel patienter där antalet (vecko)dagar från remissankomst (enligt blankett 1) till behandlingsstart (enligt blankett 2 a eller 2 b) uppgår till maximalt 40 dagar (negativa ledtider samt ledtider längre än ett år exkluderade)."
         ),
 
         # indikator 2
         indikator(df$ind2, ar = df$ar_behandlingsstart,
                   name = "Första besök på ÖNH-klinik till behandlingsstart ",
                   l1 = 50, l2 = 80,
-                  description = ""
+                  description = "Andel patienter där antalet (vecko)dagar från första besök på utredande ÖNH-mottagning (enligt blankett 1) till behandlingsstart (enligt blankett 2 a eller 2 b) uppgår till maximalt 35 dagar (negativa ledtider samt ledtider längre än ett år exkluderade)."
         ),
 
         # indikator 3
         indikator(df$ind3, ar = df$ar_behandlingsstart,
                   name = "Behandlingsbeslut till behandlingsstart ",
                   l1 = 50, l2 = 80,
-                  description = ""
+                  description = "Andel patienter där antalet (vecko)dagar från behandlingsbeslut (enligt blankett 1) till behandlingsstart (enligt blankett 2 a eller 2 b) uppgår till maximalt 15 dagar (negativa ledtider samt ledtider längre än ett år exkluderade)."
         ),
 
         # indikator 4
         indikator(df$ind4, ar = df$ar_behandlingsstart,
                   name = "Behandlingsbeslut till onkologisk behandlingsstart ",
-                  l1 = 50, l2 = 80),
+                  l1 = 50, l2 = 80,
+                  description = "Andel patienter där antalet (vecko)dagar från behandlingsbeslut (enligt blankett 1) till kirurgi (enligt blankett 2 b) uppgår till maximalt 20 dagar (enbart fall där kirurgi ges som första eller enda behandling; negativa ledtider samt ledtider längre än ett år exkluderade)."),
 
         # indikator 5
         indikator(df$ind5, ar = df$ar_behandlingsstart,
                   name = "Behandlingsbeslut till kirurgi",
                   l1 = 50, l2 = 80,
-                  description = ""
+                  description = "Andel patienter där antalet (vecko)dagar från behandlingsbeslut (enligt blankett 1) till onkologisk behandling (enligt blankett 2 a) uppgår till maximalt 12 dagar (enbart fall där extern strålbehandling, brachyterapi eller medecinsk tumörbehandling ges som första eller enda behandling; negativa ledtider samt ledtider längre än ett år exkluderade)."
         ),
 
         # indikator 6
         indikator(df$ind6, ar = df$ar_beslut,
                   name = "Remissankomst till behandlingsbeslut ",
-                  l1 = 50, l2 = 80),
+                  l1 = 50, l2 = 80,
+                  description = "Andel patienter där antalet (vecko)dagar från remissankomst (enligt blankett 1) till behandlingsbeslut (enligt blankett 1) uppgår till maximalt 25 dagar (negativa ledtider samt ledtider längre än ett år exkluderade)."),
 
         # indikator 7
         indikator(df$ind7, ar = df$ar_besok,
                   name = "Remissankomst till första besök",
                   l1 = 50, l2 = 80,
-                  description = ""
-        ),
+                  description = "Andel patienter där antalet (vecko)dagar från remissankomst (enligt blankett 1) till  första besök på utredande ÖNH-mottagning (enligt blankett 1) uppgår till maximalt 5 dagar (negativa ledtider samt ledtider längre än ett år exkluderade)."),
 
         # indikator 8
         indikator(df$ind8, ar = df$ar_cytdat,
                   name = "Första besök till cytologi/biopsi ",
                   l1 = 50, l2 = 80,
-                  description = ""
+                  description = "Andel patienter där antalet (vecko)dagar från första besök på utredande ÖNH-mottagning (enligt blankett 1) till provtagningsdatum för cytologi/px (enligt blankett 1) uppgår till maximalt 3 dagar (negativa ledtider samt ledtider längre än ett år exkluderade)."
         ),
 
         # indikator 9
         indikator(df$ind9, ar = df$ar_cytpad,
                   name = "Biopsi till Cyt/PAD svar ",
                   l1 = 50, l2 = 80,
-                  description = ""
+                  description = "Andel patienter där antalet (vecko)dagar från provtagningsdatum för cytologi/px (enligt blankett 1) till provsvarsdatum för cytologi/PAD  (enligt blankett 1) uppgår till maximalt 3 dagar (negativa ledtider samt ledtider längre än ett år exkluderade)."
         ),
 
         # indikator 10
         indikator(df$ind10, ar = df$ar_beslut,
                   name = "Andel beslut på multidisciplinär konferens ",
                   l1 = 95, l2 = 98,
-                  description = ""
+                  description = "Andel patienter för vilka behandlingsbeslut tagits vid multidiciplinär konferens (enligt blankett 1). (Patienter med läppcancer exkluderade.) "
         )
     )
 
+
+
+
+
+#########################################################################################
+#                                                                                       #
+#                          Numeriska uppgifter till sidhuvudet                          #
+#                                                                                       #
+#########################################################################################
+
+df_sidhuvud <-
+    df %>%
+    select(ar_remiss, klinikbehorighet, ar_beslut, ar_behandlingsstart) %>%
+    filter(klinikbehorighet)
+
+# Antal fall nuvarande år för angiven variabel
+ant <- function(var){
+    nrow(df_sidhuvud[df_sidhuvud[[var]] == NUVARANDE_AR, ])
+}
+
+## Uppgifterna i sidhuvudet
+klin                           <- paste0("\"", unique(df$userposname), "\"")
+ant_inkomna_remisser           <- ant("ar_remiss")
+ant_fattade_behandlingsbeslut  <- ant("ar_beslut")
+ant_paborjade_behandlingar     <- ant("ar_behandlingsstart")
 
 
 
@@ -278,15 +290,21 @@ indikatordefenitioner <-
 
 
 #################################### Ändra inget här ####################################
-
-
 fileName <- "del1.html"
+#fileName <- "D:/R-Scripts/Väst/oc5buer/huvud-_och_halscancer/kpl/del1.html"
 del1 <- readChar(fileName, file.info(fileName)$size)
 fileName <- "del2.html"
+# fileName <- "D:/R-Scripts/Väst/oc5buer/huvud-_och_halscancer/kpl/del2.html"
 del2 <- readChar(fileName, file.info(fileName)$size)
 
 dfjson <- toJSON(indikatordefenitioner)
-mitten <- paste0("\t\t var ser =", dfjson, "\n\t\t var klin = ", klin, "\n\t\t var diag =", diag, "\n\t\t var beh=", beh, "\n\t\t var prim =", prim,"\n\t\t var år =", år )
+mitten <- paste0("\t\t var ser =",     dfjson,
+                 "\n\t\t var klin = ", klin,
+                 "\n\t\t var diag =",  ant_inkomna_remisser,
+                 "\n\t\t var beh=",    ant_fattade_behandlingsbeslut,
+                 "\n\t\t var prim =",  ant_paborjade_behandlingar,
+                 "\n\t\t var år =",    NUVARANDE_AR
+          )
 
 final = paste0(del1,"\n\t<script>\n",mitten,"\n\t</Script>\n",del2)
 

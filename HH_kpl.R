@@ -1,16 +1,19 @@
 
-
-
 #########################################################################################
 #                                                                                       #
 #                                 Förberedelser lokalt                                  #
 #                                                                                       #
 #########################################################################################
 
-setwd("~/Documents/huvud_hals/koll_pa_laget")
-options(register = "Huvud- och halscancer")
-df <- read.csv("incadata.csv")
+is.inca <- function(){
+    unname(Sys.info()["nodename"] == "EXT-R27-PROD")
+}
 
+if (!is.inca()) {
+    setwd("~/Documents/huvud_hals/koll_pa_laget")
+    options(register = "Huvud- och halscancer")
+    df <- read.csv("incadata.csv")
+}
 
 #########################################################################################
 #                                                                                       #
@@ -18,9 +21,9 @@ df <- read.csv("incadata.csv")
 #                                                                                       #
 #########################################################################################
 
-
-library(dplyr)
+library(plyr)
 library(jsonlite)
+if (!is.inca()) library(infuser)
 
 names(df) <- tolower(names(df))
 
@@ -77,12 +80,10 @@ df[datum_variabler] <- lapply(df[datum_variabler],
                        )
 
 ## Boolska variabler ska vara boolska
-df <- df %>% mutate(
-    klinikbehorighet = as.logical(klinikbehorighet),
-    regionbehorighet = as.logical(regionbehorighet)
+df <- transform(df,
+        klinikbehorighet = as.logical(klinikbehorighet),
+        regionbehorighet = as.logical(regionbehorighet)
 )
-
-
 
 
 #########################################################################################
@@ -92,8 +93,8 @@ df <- df %>% mutate(
 #########################################################################################
 
 
-df <- df %>%
-    mutate(
+df <-
+    mutate(df,
 
         ## Hjälpvariabler
         # Datum för första icke kirurgiska behandling
@@ -143,20 +144,16 @@ df <- df %>%
 indikator <- function(ind, ar, name, l1 = 50, l2 = 80,
                       description = ""){
 
-    # Indikator. kan fallet klassas som "iår"
+    # Indikator. kan fallet klassas som "i år"
     iar <- ar == NUVARANDE_AR
 
     ## Plocka fram historiska klinikdata
-    historiska_ar <- data_frame(ind = ind[df$klinikbehorighet], ar = ar[df$klinikbehorighet]) %>%
-        group_by(ar) %>%
-        summarise(andel = mean(ind, na.rm = TRUE)) %>%
-        filter(ar %in% (NUVARANDE_AR - 4):(NUVARANDE_AR - 1)) %>%
-        select(andel) %>%
-        unlist() %>%
-        unname() %>%
-        `*`(100) %>%
-        round() %>%
-        ifelse(!is.nan(.) & !is.na(.) , ., 0)
+    h <- data.frame(ind = ind[df$klinikbehorighet], ar = ar[df$klinikbehorighet])
+    h <- aggregate(ind ~ ar, function(x) mean(x, na.rm = TRUE), data = h)
+    h <- round(h[h$ar %in% (NUVARANDE_AR - 4):(NUVARANDE_AR - 1), "ind"] * 100 )
+    h[h %in% c(NA, NaN)] <- 0
+    historiska_ar <- h
+
 
     ## Hjälpfunktioner för att beräkna täljare och nämnare baserat på nivå
     num <- function(behorighet = TRUE){
@@ -167,7 +164,7 @@ indikator <- function(ind, ar, name, l1 = 50, l2 = 80,
     }
 
     ## Konstruera objekt med all info för ledtiden
-    data_frame(
+    data.frame(
         name        = name,
         klinnum     = num(df$klinikbehorighet),
         klinden     = den(df$klinikbehorighet),
@@ -267,9 +264,10 @@ indikatordefenitioner <-
 #########################################################################################
 
 df_sidhuvud <-
-    df %>%
-    select(ar_remiss, klinikbehorighet, ar_beslut, ar_behandlingsstart) %>%
-    filter(klinikbehorighet)
+    subset(df,
+           klinikbehorighet,
+           c(ar_remiss, klinikbehorighet, ar_beslut, ar_behandlingsstart))
+
 
 # Antal fall nuvarande år för angiven variabel
 ant <- function(var){
@@ -286,16 +284,33 @@ ant_paborjade_behandlingar     <- ant("ar_behandlingsstart")
 
 
 
-
+##########################################################################################
+#                                                                                        #
+#                   Spara ner allt till textfil med namnn output.html                    #
+#                                                                                        #
+##########################################################################################
 
 
 #################################### Ändra inget här ####################################
-fileName <- "del1.html"
-#fileName <- "D:/R-Scripts/Väst/oc5buer/huvud-_och_halscancer/kpl/del1.html"
-del1 <- readChar(fileName, file.info(fileName)$size)
-fileName <- "del2.html"
-# fileName <- "D:/R-Scripts/Väst/oc5buer/huvud-_och_halscancer/kpl/del2.html"
-del2 <- readChar(fileName, file.info(fileName)$size)
+public_files <- "https://rcc.incanet.se/"
+filename1 <- "Public/Files/Huvud-_och_halscancer/hh_kpl/html/del1-inca.txt"
+filename2 <- "Public/Files/Huvud-_och_halscancer/hh_kpl/html/del2-inca.txt"
+
+if (!is.inca()) {
+    # På egen dator genererar vi del1 och del2 för att kunna lägga över i INCAs public files
+    # (där ska sökvägen vara relativ)
+    writeLines(infuse("del1.html"), "del1-inca.txt")
+    writeLines(infuse("del2.html"), "del2-inca.txt")
+    writeLines(infuse("kpl_klinik_region_riket-template.js", url = public_files), "kpl_klinik_region_riket.js")
+    del1 <- infuse("del1.html", url = public_files)
+    del2 <- infuse("del2.html", url = public_files)
+} else{
+
+    # läs in del 1 och 2 från INCA:s public files om vi befinner oss i INCA
+    del1 <- readChar(paste0(public_files, filename1), 1e5)
+    del2 <- readChar(paste0(public_files, filename2), 1e8)
+}
+
 
 dfjson <- toJSON(indikatordefenitioner)
 mitten <- paste0("\t\t var ser =",     dfjson,
@@ -303,9 +318,14 @@ mitten <- paste0("\t\t var ser =",     dfjson,
                  "\n\t\t var diag =",  ant_inkomna_remisser,
                  "\n\t\t var beh=",    ant_fattade_behandlingsbeslut,
                  "\n\t\t var prim =",  ant_paborjade_behandlingar,
-                 "\n\t\t var år =",    NUVARANDE_AR
+                 "\n\t\t var year =",    NUVARANDE_AR
           )
 
-final = paste0(del1,"\n\t<script>\n",mitten,"\n\t</Script>\n",del2)
+## Här måste vi vara försiktiga med encodings. Olika delar får olika encodings!!!
+cat(del1, file = file('output.html', encoding = ''))
+cat("\n\t<script>\n", file = 'output.html', append = TRUE)
+cat(mitten, file = file('output.html', 'at', encoding = 'UTF-8'), append = TRUE)
+cat("\n\t</Script>\n", file = file('output.html', 'at', encoding = 'UTF-8'), append = TRUE)
+cat(del2, file = file('output.html', 'at', encoding = ''), append = TRUE)
 
-writeLines(final,"output.html")
+

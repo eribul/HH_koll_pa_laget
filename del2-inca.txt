@@ -16,7 +16,7 @@
  							      			den3=ser[i].rikden,
  							      			placnum = 0,
  							      			placden = 0,
- 							      			history=hist,
+ 							      			hist,
  							      			l1=ser[i].l1,
  							      			l2=ser[i].l2,
  							      			group = 1,
@@ -26,12 +26,12 @@
  						      		);
         	}
 			AddSumRow(sumpoints,'Summa (värde)');
-			document.getElementById("Klin").innerHTML = klin;
-			document.getElementById("Diag").innerHTML = diag;
-			document.getElementById("Beh").innerHTML = beh;
-			document.getElementById("Prim").innerHTML = prim;
-			document.getElementById("mål").innerHTML = "Måluppfyllelse för kvalitetsindex " + year;
-			document.getElementById("intervall").innerHTML = (+year-4) + "-" + (+year-1);
+			$("#Klin").html(klin);
+			$("#Diag").html(diag);
+			$("#Beh").html(beh);
+			$("#Prim").html(prim);
+			$("#mål").html("Måluppfyllelse för kvalitetsindex " + year);
+			$("#intervall").html((+year-4) + "-" + (+year-1));
  		});
  	</script>
  	<link rel='stylesheet' type='text/css' href='./Public/Files/Prostataregistret/npcr_kpl/css/npcr_kpl.css'>

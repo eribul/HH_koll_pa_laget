@@ -210,13 +210,13 @@ indikatordefenitioner <-
         indikator(df$ind4, ar = df$ar_behandlingsstart,
                   name = "Behandlingsbeslut till onkologisk behandlingsstart ",
                   l1 = 50, l2 = 80,
-                  description = "Andel patienter där antalet (vecko)dagar från behandlingsbeslut (enligt blankett 1) till kirurgi (enligt blankett 2 b) uppgår till maximalt 20 dagar (enbart fall där kirurgi ges som första eller enda behandling; negativa ledtider samt ledtider längre än ett år exkluderade)."),
+                  description = "Andel patienter där antalet (vecko)dagar från behandlingsbeslut (enligt blankett 1) till onkologisk behandling (enligt blankett 2 b) uppgår till maximalt 20 dagar (enbart fall där extern strålbehandling, brachyterapi eller medecinsk tumörbehandling ges som första eller enda behandling; negativa ledtider samt ledtider längre än ett år exkluderade)."),
 
         # indikator 5
         indikator(df$ind5, ar = df$ar_behandlingsstart,
                   name = "Behandlingsbeslut till kirurgi",
                   l1 = 50, l2 = 80,
-                  description = "Andel patienter där antalet (vecko)dagar från behandlingsbeslut (enligt blankett 1) till onkologisk behandling (enligt blankett 2 a) uppgår till maximalt 12 dagar (enbart fall där extern strålbehandling, brachyterapi eller medecinsk tumörbehandling ges som första eller enda behandling; negativa ledtider samt ledtider längre än ett år exkluderade)."
+                  description = "Andel patienter där antalet (vecko)dagar från behandlingsbeslut (enligt blankett 1) till kirurgi (enligt blankett 2 a) uppgår till maximalt 12 dagar (enbart fall där kirurgi ges som första eller enda behandling; negativa ledtider samt ledtider längre än ett år exkluderade)."
         ),
 
         # indikator 6

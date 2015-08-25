@@ -49,12 +49,17 @@ first_first <- function(x){
 }
 
 # Funktion för att hitta relevant årtal. Nytt år tas först fr o m 1 juli
+# eller enligt parameterval om sådant finns
 current_year <- function(date = Sys.Date()) {
-    date <- as.Date(date)
-    year <- as.numeric(format(date, format = "%Y"))
-    month <- as.numeric(format(date, format = "%Y"))
-    if (month <= 6 ) {
-        year <- year - 1
+    if (exists("param") && !is.null(param[["valt_ar"]]) && param$valt_ar != "Aktuellt år") {
+        year <- as.numeric(param[["valt_ar"]])
+    } else {
+        date <- as.Date(date)
+        year <- as.numeric(format(date, format = "%Y"))
+        month <- as.numeric(format(date, format = "%Y"))
+        if (month <= 6 ) {
+            year <- year - 1
+        }
     }
     year
 }
@@ -70,7 +75,10 @@ faktorer <- sapply(df, is.factor)
 df[faktorer] <- lapply(df[faktorer], as.character)
 
 ## Datum ska vara datum
-datum_variabler <- c("a_remdat",
+datum_variabler <- c("a_rappdatanm",
+                     "b_rappdatbeh",
+                     "b_onk_inrappdat",
+                     "a_remdat",
                      "a_diadat",
                      "a_cytdat",
                      "a_cytpad",
@@ -86,8 +94,16 @@ df[datum_variabler] <- lapply(df[datum_variabler],
                              function(x) as.Date(x, format = "%Y-%m-%d")
                        )
 
-## Boolska variabler ska vara boolska
-df <- transform(df,
+
+
+##########################################################################################
+#                                                                                        #
+#                             Klinik- och regiontillhörigeht                             #
+#                                                                                        #
+##########################################################################################
+
+df <- dplyr::mutate(df,
+        klinikbehorighet2 = userunitcode == a_anmkli & userparentunitcode == a_anmsjh,
         klinikbehorighet = as.logical(klinikbehorighet),
         regionbehorighet = as.logical(regionbehorighet)
 )
@@ -312,21 +328,22 @@ indikatordefenitioner <- indikatordefenitioner[c(7, 8, 9, 2, 6, 3, 4, 5, 1, 10),
 df_sidhuvud <-
     subset(df,
            klinikbehorighet,
-           c(ar_remiss, klinikbehorighet, ar_beslut, ar_behandlingsstart))
+           c(a_rappdatanm, b_rappdatbeh, b_onk_inrappdat, klinikbehorighet))
 
 
 # Antal fall nuvarande år för angiven variabel
 ant <- function(var){
-    var <- df_sidhuvud[[var]]
+    var <- as.Date(df_sidhuvud[[var]])
+    var <- as.numeric(format(var, format = "%Y"))
     nrow(df_sidhuvud[!is.na(var) & var == current_year(), ])
 }
 
 ## Uppgifterna i sidhuvudet
-klin                           <- paste0("\"", unique(df$userposname), "\"")
-ant_inkomna_remisser           <- ant("ar_remiss")
-ant_fattade_behandlingsbeslut  <- ant("ar_beslut")
-ant_paborjade_behandlingar     <- ant("ar_behandlingsstart")
+klin      <- paste0("\"", unique(df$userposname), "\"")
 
+ant_blk1  <- ant("a_rappdatanm")
+ant_blk2_kir <- ant("b_rappdatbeh")
+ant_blk2_onk <- ant("b_onk_inrappdat")
 
 
 
@@ -360,10 +377,10 @@ if (!is.inca()) {
 dfjson <- toJSON(indikatordefenitioner)
 mitten <- paste0("\t\t var ser =",     dfjson,
                  "\n\t\t var klin = ", klin,
-                 "\n\t\t var diag =",  ant_inkomna_remisser,
-                 "\n\t\t var beh=",    ant_fattade_behandlingsbeslut,
-                 "\n\t\t var prim =",  ant_paborjade_behandlingar,
-                 "\n\t\t var year =",    current_year()
+                 "\n\t\t var diag =",  ant_blk1,
+                 "\n\t\t var beh=",    ant_blk2_kir,
+                 "\n\t\t var prim =",  ant_blk2_onk,
+                 "\n\t\t var year =",  current_year()
           )
 
 ## Här måste vi vara försiktiga med encodings. Olika delar får olika encodings!!!

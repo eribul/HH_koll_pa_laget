@@ -22,6 +22,7 @@ if (!is.inca()) {
 #########################################################################################
 
 library(jsonlite)
+library(dplyr)
 if (!is.inca()) library(infuser)
 
 names(df) <- tolower(names(df))
@@ -175,8 +176,13 @@ indikator <- function(ind, ar, name, l1 = 50, l2 = 80,
 
     ## Plocka fram historiska klinikdata
     h <- data.frame(ind = ind[df$klinikbehorighet], ar = ar[df$klinikbehorighet])
-    h <- aggregate(ind ~ ar, function(x) mean(x, na.rm = TRUE), data = h)
-    h <- round(h[h$ar %in% (current_year() - 4):(current_year() - 1), "ind"] * 100 )
+    h <- h %>%
+        group_by(ar) %>%
+        summarise(ind = mean(ind, na.rm = TRUE) * 100) %>%
+        filter(ar %in% (current_year() - 4):(current_year() - 1)) %>%
+        .$ind
+    # h <- aggregate(ind ~ ar, function(x) mean(x, na.rm = TRUE), data = h)
+    # h <- round(h[h$ar %in% (current_year() - 4):(current_year() - 1), "ind"] * 100 )
     h[h %in% c(NA, NaN)] <- 0
     historiska_ar <- h
 

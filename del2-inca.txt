@@ -30,7 +30,7 @@
 			$("#Diag").html(diag);
 			$("#Beh").html(beh);
 			$("#Prim").html(prim);
-			$("#mål").html("Måluppfyllelse för kvalitetsindex " + year);
+			$("#mål").html("Måluppfyllelse för åtgärder utförda/avslutade " + year);
 			$("#intervall").html((+year-4) + "-" + (+year-1));
  		});
  	</script>
@@ -104,7 +104,8 @@
  				</table>
  			</td>
  			<td class='fig graytext'>
- 				<div style='padding:2px 0px;'>Måluppfyllelse</div>
+ 				<div style='padding:2px 0px;'>Min kliniks</div>
+ 				<div style='padding:2px 0px;'>måluppfyllelse</div>
  				<div style='padding:2px 0px;' id = "intervall">this text will change</div>
  			</td>
  			<td class='margin'></td>
@@ -148,7 +149,7 @@
          <div class='indexDescription'>Antal patienter för vilka kvalitetsnivån uppnåtts, av totalt antal patienter som hittills rapporterats.</div>
          <div class='indexDescriptionSubTitle'>Min klinik/Regionen/Riket</div>
          <div class='indexDescription'>Andel patienter för vilka kvalitetsnivån uppnåtts. Vertikala strecken visar nedre och övre gränsnivå.</div>
-         <div class='indexDescriptionSubTitle'>Måluppfyllelse 2011-2014</div>
+         <div class='indexDescriptionSubTitle'>Min kliniks måluppfyllelse </div>
          <div class='indexDescription'>Klinikens historiska måluppfyllelse de föregående fyra åren.</div>
        </td>
        <td class='margin'></td>

@@ -52,17 +52,38 @@ first_first <- function(x){
 # Funktion för att hitta relevant årtal. Nytt år tas först fr o m 1 juli
 # eller enligt parameterval om sådant finns
 current_year <- function(date = Sys.Date()) {
-    if (exists("param") && !is.null(param[["valt_ar"]]) && param$valt_ar != "Aktuellt år") {
-        year <- as.numeric(param[["valt_ar"]])
+
+    # Använd värden från parameterval om sådana finns,
+    # använd annars innevarande år fr o m juli, annars föregående år
+    if (exists("param") && !is.null(param$year_from)) {
+        from_year <- as.numeric(param$year_from)
+        to_year  <- as.numeric(param$year_to)
+        if (from_year > to_year) {
+            fd <- file( "output.html", "w", encoding = "UTF-8" )
+            write( '<strong> <font color="red"> Du har valt ett ogiltigt årsintervall! Förmodligen bör du byta plats på de båda årtalen! </forn></strong>', file = fd )
+            q()
+        }
     } else {
         date <- as.Date(date)
         year <- as.numeric(format(date, format = "%Y"))
         month <- as.numeric(format(date, format = "%Y"))
         if (month <= 6 ) {
-            year <- year - 1
+            to_year <- year - 1
+        } else{
+            to_year <- year
         }
+        from_year <- to_year
     }
-    year
+
+    # Ett antal olika årsangivelser i retur
+    list(from_year = from_year,
+         to_year = to_year,
+         hist_years = seq.int(to_year - 4, to_year - 1, 1),
+         years_num = seq.int(from_year, to_year, 1),
+         years_label = if (from_year == to_year) from_year else paste0("'", from_year, " - ", to_year, "'"),
+         hist_years_label = paste0("'", to_year - 4, " - ", to_year - 1, "'")
+
+    )
 }
 
 #########################################################################################
@@ -172,17 +193,15 @@ indikator <- function(ind, ar, name, l1 = 50, l2 = 80,
                       description = ""){
 
     # Indikator. kan fallet klassas som "i år"
-    iar <- ar == current_year()
+    iar <- ar %in% current_year()$years_num
 
     ## Plocka fram historiska klinikdata
     h <- data.frame(ind = ind[df$klinikbehorighet], ar = ar[df$klinikbehorighet])
     h <- h %>%
         group_by(ar) %>%
         summarise(ind = mean(ind, na.rm = TRUE) * 100) %>%
-        filter(ar %in% (current_year() - 4):(current_year() - 1)) %>%
+        filter(ar %in% current_year()$hist_years) %>%
         .$ind
-    # h <- aggregate(ind ~ ar, function(x) mean(x, na.rm = TRUE), data = h)
-    # h <- round(h[h$ar %in% (current_year() - 4):(current_year() - 1), "ind"] * 100 )
     h[h %in% c(NA, NaN)] <- 0
     historiska_ar <- h
 
@@ -341,7 +360,7 @@ df_sidhuvud <-
 ant <- function(var){
     var <- as.Date(df_sidhuvud[[var]])
     var <- as.numeric(format(var, format = "%Y"))
-    nrow(df_sidhuvud[!is.na(var) & var == current_year(), ])
+    nrow(df_sidhuvud[!is.na(var) & var %in% current_year()$years_num, ])
 }
 
 ## Uppgifterna i sidhuvudet
@@ -386,7 +405,8 @@ mitten <- paste0("\t\t var ser =",     dfjson,
                  "\n\t\t var diag =",  ant_blk1,
                  "\n\t\t var beh=",    ant_blk2_kir,
                  "\n\t\t var prim =",  ant_blk2_onk,
-                 "\n\t\t var year =",  current_year()
+                 "\n\t\t var year =",  current_year()$years_label,
+                 "\n\t\t var hist_years_label =",  current_year()$hist_years_label
           )
 
 ## Här måste vi vara försiktiga med encodings. Olika delar får olika encodings!!!

@@ -30,8 +30,8 @@
 			$("#Diag").html(diag);
 			$("#Beh").html(beh);
 			$("#Prim").html(prim);
-			$("#mål").html("Måluppfyllelse för åtgärder utförda/avslutade " + year);
-			$("#intervall").html((+year-4) + "-" + (+year-1));
+			$("#mål").html("Måluppfyllelse för åtgärder avslutade " + year);
+			$("#intervall").html(hist_years_label);
  		});
  	</script>
  	<link rel='stylesheet' type='text/css' href='./Public/Files/Prostataregistret/npcr_kpl/css/npcr_kpl.css'>
@@ -78,9 +78,12 @@
  		</tr>
  		<tr class='divider'>
  			<td class='margin'></td>
- 			<td class='indsign'></td>
+ 			<td style='width: 35px'>
+   			    <div>Poäng för</div>
+   			    <div>kliniken</div>
+ 			</td>
  			<td class='indtext graytext'>
-   			<div>Indikator</div>
+   			    <div>Indikator</div>
  			</td>
  			<td class='indpat graytext'>
  				<div style='padding:2px 0px;'>Antal</div>

@@ -78,10 +78,11 @@ current_year <- function(date = Sys.Date()) {
     # Ett antal olika årsangivelser i retur
     list(from_year = from_year,
          to_year = to_year,
-         hist_years = seq.int(to_year - 4, to_year - 1, 1),
+         hist_years = if (from_year == to_year) seq.int(to_year - 4, to_year - 1, 1) else seq.int(to_year - 3, to_year, 1),
          years_num = seq.int(from_year, to_year, 1),
          years_label = if (from_year == to_year) from_year else paste0("'", from_year, " - ", to_year, "'"),
-         hist_years_label = paste0("'", to_year - 4, " - ", to_year - 1, "'")
+         hist_years_label = if (from_year == to_year) paste0("'", to_year - 4, " - ", to_year - 1, "'")
+                            else paste0("'", to_year - 3, " - ", to_year, "'")
 
     )
 }

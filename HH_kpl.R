@@ -55,7 +55,7 @@ current_year <- function(date = Sys.Date()) {
 
     # Använd värden från parameterval om sådana finns,
     # använd annars innevarande år fr o m juli, annars föregående år
-    if (exists("param") && !is.null(param$year_from)) {
+    if (exists("param") && !is.null(param$year_from) && param$year_from != "1900") {
         from_year <- as.numeric(param$year_from)
         to_year  <- as.numeric(param$year_to)
         if (from_year > to_year) {

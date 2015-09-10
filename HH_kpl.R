@@ -435,7 +435,7 @@ if (!is.inca()) {
     # (där ska sökvägen vara relativ)
     writeLines(infuse("del1.html"), "del1-inca.txt")
     writeLines(infuse("del2.html"), "del2-inca.txt")
-    writeLines(infuse("kpl_klinik_region_riket-template.js", url = public_files), "kpl_klinik_region_riket.js")
+    writeLines(infuse("kpl_klinik_region_riket-template.js"), "kpl_klinik_region_riket.js")
     del1 <- infuse("del1.html", url = public_files)
     del2 <- infuse("del2.html", url = public_files)
 } else{

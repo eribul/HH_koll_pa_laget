@@ -314,7 +314,7 @@
 
 						content = document.createElement('img');
 						$(content).attr('width','35px');
-						$(content).attr('src','D:/R-Scripts/Väst/oc5buer/huvud-_och_halscancer/kpl//Public/Files/Prostataregistret/npcr_kpl/img/npcr_act'+sign+'.png');
+						$(content).attr('src','./Public/Files/Prostataregistret/npcr_kpl/img/npcr_act'+sign+'.png');
 						td.appendChild(content);
 					}
 				tr.appendChild(td);
@@ -323,6 +323,8 @@
 				$(td).attr('class','indtext');
 					content = document.createElement('div');
 					$(content).attr('class','shorttitle');
+					$(content).attr('data-tooltip',description);
+                    $(content).addClass('tooltip');
 					$(content).html(counter + '. ' + shorttitle);
 					td.appendChild(content);
 					content = document.createElement('div');

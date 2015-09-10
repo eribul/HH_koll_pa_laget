@@ -323,6 +323,8 @@
 				$(td).attr('class','indtext');
 					content = document.createElement('div');
 					$(content).attr('class','shorttitle');
+					$(content).attr('data-tooltip',description);
+                    $(content).addClass('tooltip');
 					$(content).html(counter + '. ' + shorttitle);
 					td.appendChild(content);
 					content = document.createElement('div');

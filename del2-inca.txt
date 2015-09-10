@@ -34,7 +34,7 @@
 			$("#intervall").html(hist_years_label);
  		});
  	</script>
- 	<link rel='stylesheet' type='text/css' href='./Public/Files/Prostataregistret/npcr_kpl/css/npcr_kpl.css'>
+ 	<link rel='stylesheet' type='text/css' href='./Public/Files/Prostataregistret/npcr_kpl/css/npcr_kpl_evry.css'>
  </head>
  <body class = "print">
  	<table class='headTable'>
@@ -45,15 +45,18 @@
  			</td>
  			<td rowspan=2 class='nopat'>
  				<div class = "nopat" id="Diag">This text will change</div>
- 				<div>registrerade<br>anmälningsblanketter<br>&nbsp;</div>
+ 				<div class="tooltip top" data-tooltip="Antal inrapporterade anmälningsblanketter rapporterade av den egna kliniken under aktuell period.">
+ 				    registrerade<br>anmälningsblanketter<br>&nbsp;</div>
  			</td>
  			<td rowspan=2 class='nopat'>
  				<div class = "nopat" id="Beh">This text will change</div>
- 				<div>registrerade<br>kirurgiblanketter<br>&nbsp;</div>
+ 				<div class="tooltip top" data-tooltip="Fr o m 2013 klinikens inrapporterade kirurgiblanketter. 2008-2012 blk 2 där behandlingen var kirurgi.">
+ 				registrerade<br>kirurgiblanketter<br>&nbsp;</div>
  			</td>
  			<td rowspan=2 class='nopat'>
  				<div class = "nopat" id="Prim">This text will change</div>
- 				<div>registrerade <br>onkologiblanketter<br>&nbsp;</div>
+ 				<div class="tooltip top" data-tooltip="Fr o m 2013 klinikens inrapporterade onkologiblanketter. 2008-2012 blk 2 där behandlingen var onkologi.">
+ 				registrerade <br>onkologiblanketter<br>&nbsp;</div>
  			</td>
  			<td class='helppdf'>
  				<a class='infolink'><div><iframe src='./Public/Files/Prostataregistret/npcr_kpl/help.html' id='helpWindow' style='width:100%;height:100%;border:0;overflow:visible;'></iframe></div></a>

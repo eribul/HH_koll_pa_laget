@@ -358,19 +358,39 @@ df_sidhuvud <-
 
 
 # Antal fall nuvarande år för angiven variabel
-ant <- function(var){
-    var <- as.Date(df_sidhuvud[[var]])
+ant <- function(x, var){
+    x <- filter(x, klinikbehorighet)
+    var <- as.Date(x[[var]])
     var <- as.numeric(format(var, format = "%Y"))
-    nrow(df_sidhuvud[!is.na(var) & var %in% current_year()$years_num, ])
+    nrow(x[!is.na(var) & var %in% current_year()$years_num, ])
+}
+
+not_blank <- function(x) {
+    !is.na(x) & as.character(x) != ""
 }
 
 ## Uppgifterna i sidhuvudet
 klin      <- paste0("\"", unique(df$userposname), "\"")
 
-ant_blk1  <- ant("a_rappdatanm")
-ant_blk2_kir <- ant("b_rappdatbeh")
-ant_blk2_onk <- ant("b_onk_inrappdat")
+ant_blk1  <- df %>% ant("a_rappdatanm")
+# ant_blk2_onk <- ant("b_onk_inrappdat")
 
+ant_blk2_kir <- df %>%
+    filter(not_blank(a_bebehkirha_beskrivning) |
+           not_blank(a_bebehkirpri_beskrivning) |
+           not_blank(b_op1sjh)
+    ) %>%
+    ant("b_rappdatbeh")
+
+ant_blk2_onk <- df %>%
+    mutate(b_onk_inrappdat2 = ifelse(is.na(b_onk_inrappdat), as.character(b_rappdatbeh), as.character(b_onk_inrappdat))) %>%
+    filter(
+        not_blank(b_stralsjh) |
+        not_blank(b_stralstart) |
+        not_blank(b_brachystart) |
+        not_blank(b_behmed)
+    ) %>%
+        ant("b_onk_inrappdat2")
 
 
 

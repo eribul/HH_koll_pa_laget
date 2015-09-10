@@ -351,15 +351,9 @@ indikatordefenitioner <- indikatordefenitioner[c(7, 8, 9, 2, 6, 3, 4, 5, 1, 10),
 #                                                                                       #
 #########################################################################################
 
-df_sidhuvud <-
-    subset(df,
-           klinikbehorighet,
-           c(a_rappdatanm, b_rappdatbeh, b_onk_inrappdat, klinikbehorighet))
-
 
 # Antal fall nuvarande år för angiven variabel
 ant <- function(x, var){
-    x <- filter(x, klinikbehorighet)
     var <- as.Date(x[[var]])
     var <- as.numeric(format(var, format = "%Y"))
     nrow(x[!is.na(var) & var %in% current_year()$years_num, ])
@@ -369,28 +363,60 @@ not_blank <- function(x) {
     !is.na(x) & as.character(x) != ""
 }
 
-## Uppgifterna i sidhuvudet
+
+############################# Aktuell klinik ##############################
+
 klin      <- paste0("\"", unique(df$userposname), "\"")
 
-ant_blk1  <- df %>% ant("a_rappdatanm")
-# ant_blk2_onk <- ant("b_onk_inrappdat")
+
+
+################ Antal inrapporterade anmälningsblanketter ################
+
+ant_blk1  <- df %>%
+    filter(klinikbehorighet) %>%
+    ant("a_rappdatanm")
+
+
+
+################# Antal inrapporterade kirurgiblanketter ##################
 
 ant_blk2_kir <- df %>%
+    # Behandlingsblankett finns
     filter(not_blank(a_bebehkirha_beskrivning) |
            not_blank(a_bebehkirpri_beskrivning) |
            not_blank(b_op1sjh)
     ) %>%
+    # Blanketten kan knytas till inrapportörens klinik
+    filter(userunitcode == b_anmkli, userparentunitcode == b_anmsjh) %>%
     ant("b_rappdatbeh")
 
+
+
+################# Antal inrapporterade onkologiblanketter #################
+
 ant_blk2_onk <- df %>%
-    mutate(b_onk_inrappdat2 = ifelse(is.na(b_onk_inrappdat), as.character(b_rappdatbeh), as.character(b_onk_inrappdat))) %>%
+
+    # onk-datum kompletteras med datum från kir då det första saknas men skulle ha funnits om
+    # onk-blanketten varit införd (vilket den var först 2013)
+    mutate(b_onk_inrappdat2 = ifelse(is.na(b_onk_inrappdat),
+                                     as.character(b_rappdatbeh),
+                                     as.character(b_onk_inrappdat))) %>%
+    # Behandlingsblankett finns
     filter(
         not_blank(b_stralsjh) |
         not_blank(b_stralstart) |
         not_blank(b_brachystart) |
         not_blank(b_behmed)
     ) %>%
-        ant("b_onk_inrappdat2")
+    # Blanketten kan knytas till inrapportörens klinik
+    mutate(b_onk_inrappklk2 = ifelse(is.na(b_onk_inrappklk),
+                                     as.character(b_anmkli),
+                                     as.character(b_onk_inrappklk)),
+           b_onk_inrappsjh2 = ifelse(is.na(b_onk_inrappsjh),
+                                     as.character(b_anmsjh),
+                                     as.character(b_onk_inrappsjh))) %>%
+    filter(userunitcode == b_onk_inrappklk2, userparentunitcode == b_onk_inrappsjh2) %>%
+    ant("b_onk_inrappdat2")
 
 
 

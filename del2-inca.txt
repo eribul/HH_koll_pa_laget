@@ -45,17 +45,17 @@
  			</td>
  			<td rowspan=2 class='nopat'>
  				<div class = "nopat" id="Diag">This text will change</div>
- 				<div class="tooltip top" data-tooltip="Antal inrapporterade anmälningsblanketter rapporterade av den egna kliniken under aktuell period.">
+ 				<div class="tooltip top" data-tooltip="Antal inrapporterade anmälningsblanketter rapporterade av den egna enheten under aktuell period.">
  				    registrerade<br>anmälningsblanketter<br>&nbsp;</div>
  			</td>
  			<td rowspan=2 class='nopat'>
  				<div class = "nopat" id="Beh">This text will change</div>
- 				<div class="tooltip top" data-tooltip="Fr o m 2013 klinikens inrapporterade kirurgiblanketter. 2008-2012 blk 2 där behandlingen var kirurgi.">
+ 				<div class="tooltip top" data-tooltip="Fr o m 2013 enhetens inrapporterade kirurgiblanketter. 2008-2012 blk 2 där behandlingen var kirurgi.">
  				registrerade<br>kirurgiblanketter<br>&nbsp;</div>
  			</td>
  			<td rowspan=2 class='nopat'>
  				<div class = "nopat" id="Prim">This text will change</div>
- 				<div class="tooltip top" data-tooltip="Fr o m 2013 klinikens inrapporterade onkologiblanketter. 2008-2012 blk 2 där behandlingen var onkologi.">
+ 				<div class="tooltip top" data-tooltip="Fr o m 2013 enhetens inrapporterade onkologiblanketter. 2008-2012 blk 2 där behandlingen var onkologi.">
  				registrerade <br>onkologiblanketter<br>&nbsp;</div>
  			</td>
  			<td class='helppdf'>
@@ -83,7 +83,7 @@
  			<td class='margin'></td>
  			<td style='width: 35px'>
    			    <div>Poäng för</div>
-   			    <div>kliniken</div>
+   			    <div>enheten</div>
  			</td>
  			<td class='indtext graytext'>
    			    <div>Indikator</div>
@@ -97,7 +97,7 @@
  				<table>
  					<tr style='border:0'>
  						<td style='border:5px solid #FFFFFF;background-color:#00B3F6;width:20px;height=7px;padding:0px 0px'></td>
- 						<td style='border:0;height=7px;padding:2px 5px'>Min klinik</td>
+ 						<td style='border:0;height=7px;padding:2px 5px'>Min enhet</td>
  					</tr>
  					<tr  style='border:0'>
  						<td style='border:5px solid #FFFFFF;background-color:#FFB117;width:20px;height=7px;padding:0px 0px'></td>
@@ -110,7 +110,7 @@
  				</table>
  			</td>
  			<td class='fig graytext'>
- 				<div style='padding:2px 0px;'>Min kliniks</div>
+ 				<div style='padding:2px 0px;'>Min enhets</div>
  				<div style='padding:2px 0px;'>måluppfyllelse</div>
  				<div style='padding:2px 0px;' id = "intervall">this text will change</div>
  			</td>
@@ -134,7 +134,7 @@
        <td class='leftborder2'></td>
        <td class='info1'>
          <div class='indexDescriptionSubTitle'>Kvalitetsindikatorer och tre nivåer av uppfyllelse</div>
-         <div class='indexDescription'>Måluppfyllelse på kliniken i relation till gränsnivåer</div>
+         <div class='indexDescription'>Måluppfyllelse på enheten i relation till gränsnivåer</div>
          <table style='margin-top:10px;'>
            <tr>
              <td style='padding:1px;'><img width='25px' src='./Public/Files/Prostataregistret/npcr_kpl/img/npcr_act1.png'></td>
@@ -153,10 +153,10 @@
        <td class='info2'>
          <div class='indexDescriptionSubTitle'>Antal patienter</div>
          <div class='indexDescription'>Antal patienter för vilka kvalitetsnivån uppnåtts, av totalt antal patienter som hittills rapporterats.</div>
-         <div class='indexDescriptionSubTitle'>Min klinik/Regionen/Riket</div>
+         <div class='indexDescriptionSubTitle'>Min Enhet/Regionen/Riket</div>
          <div class='indexDescription'>Andel patienter för vilka kvalitetsnivån uppnåtts. Vertikala strecken visar nedre och övre gränsnivå.</div>
-         <div class='indexDescriptionSubTitle'>Min kliniks måluppfyllelse </div>
-         <div class='indexDescription'>Klinikens historiska måluppfyllelse de föregående fyra åren.</div>
+         <div class='indexDescriptionSubTitle'>Min enhets måluppfyllelse </div>
+         <div class='indexDescription'>Enhetens historiska måluppfyllelse de föregående fyra åren.</div>
        </td>
        <td class='margin'></td>
      </tr>

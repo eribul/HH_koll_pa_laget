@@ -449,7 +449,8 @@ ant_blk2_onk <- df[df$klinikbehorighet,] %>%
 #                   Spara ner allt till textfil med namnn output.html                    #
 #                                                                                        #
 ##########################################################################################
-
+enhetstext <- if (grepl("klinik",  param$belongs_to_unit, TRUE))   "Min klinik" else
+              if (grepl("sjukhus", param$belongs_to_unit, TRUE)) "Mitt sjukhus"
 
 #################################### Ändra inget här ####################################
 public_files <- "D:/R-Scripts/Väst/oc5buer/huvud-_och_halscancer/kpl/"

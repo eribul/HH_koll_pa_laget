@@ -60,7 +60,10 @@ current_year <- function(date = Sys.Date()) {
         to_year  <- as.numeric(param$year_to)
         if (from_year > to_year) {
             fd <- file( "output.html", "w", encoding = "UTF-8" )
-            write( '<strong> <font color="red"> Du har valt ett ogiltigt årsintervall! Förmodligen bör du byta plats på de båda årtalen! </forn></strong>', file = fd )
+            write(paste('<strong> <font color="red"> Du har valt ett ogiltigt',
+                        'årsintervall! Förmodligen bör du byta plats på de båda',
+                        'årtalen! </forn></strong>', file = fd )
+            )
             q()
         }
     } else {
@@ -76,12 +79,15 @@ current_year <- function(date = Sys.Date()) {
     }
 
     # Ett antal olika årsangivelser i retur
-    list(from_year = from_year,
-         to_year = to_year,
-         hist_years = if (from_year == to_year) seq.int(to_year - 4, to_year - 1, 1) else seq.int(to_year - 3, to_year, 1),
-         years_num = seq.int(from_year, to_year, 1),
-         years_label = if (from_year == to_year) from_year else paste0("'", from_year, " - ", to_year, "'"),
-         hist_years_label = if (from_year == to_year) paste0("'", to_year - 4, " - ", to_year - 1, "'")
+    list(from_year        = from_year,
+         to_year          = to_year,
+         hist_years       = if (from_year == to_year) seq.int(to_year - 4, to_year - 1, 1)
+                            else seq.int(to_year - 3, to_year, 1),
+         years_num        = seq.int(from_year, to_year, 1),
+         years_label      = if (from_year == to_year) from_year
+                            else paste0("'", from_year, " - ", to_year, "'"),
+         hist_years_label = if (from_year == to_year)
+                                paste0("'", to_year - 4, " - ", to_year - 1, "'")
                             else paste0("'", to_year - 3, " - ", to_year, "'")
 
     )
@@ -125,12 +131,31 @@ df[datum_variabler] <- lapply(df[datum_variabler],
 #                                                                                        #
 ##########################################################################################
 
-df <- dplyr::mutate(df,
-        klinikbehorighet2 = userunitcode == a_anmkli & userparentunitcode == a_anmsjh,
-        klinikbehorighet = as.logical(klinikbehorighet),
-        regionbehorighet = as.logical(regionbehorighet)
-)
+compare_unit <- function(sjh, klk) {
+    df$userparentunitcode == df[[sjh]] & df$userunitcode == df[[klk]]
+}
 
+# enhetstillhörighet styrd av parameterval
+df$klinikbehorighet <-
+        switch(param$belongs_to_unit,
+          "registrerat anmälningsblanketten" =
+              compare_unit("a_anmsjh", "a_anmkli"),
+          "fattat behandlingsbeslut" =
+              compare_unit("a_beslsjh", "a_beslkli"),
+          "opererat" =
+              compare_unit("b_op1sjh", "b_op1kli") |
+              compare_unit("b_op2sjh", "b_op2kli") |
+              compare_unit("b_ophogersjh", "b_ophogerkli") |
+              compare_unit("b_opvanstersjh", "b_opvansterkli"),
+          "utfört onkologisk behandling" =
+              compare_unit("b_brachysjh", "b_brachykli") |
+              compare_unit("b_stralsjh", "b_stralkli") |
+              compare_unit("b_medsjh", "b_medkli"),
+          "bidragit till INCA-rapportering" =
+              as.logical(df$registerpostbehorighet)
+        )
+df$klinikbehorighet[is.na(df$klinikbehorighet)] <- FALSE
+df$regionbehorighet <- as.logical(df$regionbehorighet)
 
 #########################################################################################
 #                                                                                       #
@@ -372,32 +397,31 @@ klin      <- paste0("\"", unique(df$userposname), "\"")
 
 ################ Antal inrapporterade anmälningsblanketter ################
 
-ant_blk1  <- df %>%
-    filter(klinikbehorighet) %>%
+ant_blk1  <- df[df$klinikbehorighet, ] %>%
     ant("a_rappdatanm")
 
 
 
 ################# Antal inrapporterade kirurgiblanketter ##################
 
-ant_blk2_kir <- df %>%
+# Blanketten ska kunna knytas till anmälande enhet av kirurgi bland de enheter
+# man valt att inkludera
+ant_blk2_kir <- df[df$klinikbehorighet & compare_unit("b_anmsjh", "b_anmkli"), ] %>%
     # Behandlingsblankett finns
     filter(not_blank(a_bebehkirha_beskrivning) |
            not_blank(a_bebehkirpri_beskrivning) |
            not_blank(b_op1sjh)
     ) %>%
-    # Blanketten kan knytas till inrapportörens klinik
-    filter(userunitcode == b_anmkli, userparentunitcode == b_anmsjh) %>%
     ant("b_rappdatbeh")
 
 
 
 ################# Antal inrapporterade onkologiblanketter #################
 
-ant_blk2_onk <- df %>%
+ant_blk2_onk <- df[df$klinikbehorighet,] %>%
 
-    # onk-datum kompletteras med datum från kir då det första saknas men skulle ha funnits om
-    # onk-blanketten varit införd (vilket den var först 2013)
+    # onk-datum kompletteras med datum från kir då det första saknas men skulle ha funnits
+    # om onk-blanketten varit införd (vilket den var först 2013)
     mutate(b_onk_inrappdat2 = ifelse(is.na(b_onk_inrappdat),
                                      as.character(b_rappdatbeh),
                                      as.character(b_onk_inrappdat))) %>%

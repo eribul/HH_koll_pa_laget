@@ -117,7 +117,8 @@ datum_variabler <- c("a_rappdatanm",
                      "b_op2dat",
                      "b_brachystart",
                      "b_stralstart",
-                     "b_medstart"
+                     "b_medstart",
+                     "u_rappdatuppf"
                 )
 df[datum_variabler] <- lapply(df[datum_variabler],
                              function(x) as.Date(x, format = "%Y-%m-%d")
@@ -130,28 +131,37 @@ df[datum_variabler] <- lapply(df[datum_variabler],
 #                             Klinik- och regiontillhörigeht                             #
 #                                                                                        #
 ##########################################################################################
-
-compare_unit <- function(sjh, klk) {
-    df$userparentunitcode == df[[sjh]] & df$userunitcode == df[[klk]]
+# Jämför alltid sjukhus
+# Jämför dessutom klinik om klk != NULL och klinik relevant enl param
+compare_unit <- function(sjh, klk = NULL) {
+    compare_sjh <- df$userparentunitcode == df[[sjh]]
+    x <-
+        if (!is.null(klk) & grepl("klinik",  param$belongs_to_unit, TRUE)) {
+            compare_sjh & df$userunitcode == df[[klk]]
+        } else{
+            compare_sjh
+        }
+    x[is.na(x)] <- FALSE
+    x
 }
 
 # enhetstillhörighet styrd av parameterval
 df$klinikbehorighet <-
         switch(param$belongs_to_unit,
-          "registrerat anmälningsblanketten" =
+          "min klinik registrerat anmälningsblanketten" =
               compare_unit("a_anmsjh", "a_anmkli"),
-          "fattat behandlingsbeslut" =
-              compare_unit("a_beslsjh", "a_beslkli"),
-          "opererat" =
+          "mitt sjukhus fattat behandlingsbeslut" =
+              compare_unit("a_beslsjh"),
+          "min klinik opererat" =
               compare_unit("b_op1sjh", "b_op1kli") |
               compare_unit("b_op2sjh", "b_op2kli") |
               compare_unit("b_ophogersjh", "b_ophogerkli") |
               compare_unit("b_opvanstersjh", "b_opvansterkli"),
-          "utfört onkologisk behandling" =
+          "min klinik utfört onkologisk behandling" =
               compare_unit("b_brachysjh", "b_brachykli") |
               compare_unit("b_stralsjh", "b_stralkli") |
               compare_unit("b_medsjh", "b_medkli"),
-          "bidragit till INCA-rapportering" =
+          "min klinik bidragit till INCA-rapportering" =
               as.logical(df$registerpostbehorighet)
         )
 df$klinikbehorighet[is.na(df$klinikbehorighet)] <- FALSE
@@ -390,57 +400,51 @@ not_blank <- function(x) {
 
 
 ############################# Aktuell klinik ##############################
-
-klin      <- paste0("\"", unique(df$userposname), "\"")
+klin      <- paste0("\"", "Total inrapporteringsaktivitet ", current_year()$years_label, " för: <br>",
+                    unique(df$userposname), "\"")
 
 
 
 ################ Antal inrapporterade anmälningsblanketter ################
 
-ant_blk1  <- df[df$klinikbehorighet, ] %>%
+ant_blk1  <- df[compare_unit("a_anmsjh", "a_anmkli"), ] %>%
     ant("a_rappdatanm")
 
 
 
-################# Antal inrapporterade kirurgiblanketter ##################
+################# Antal inrapporterade behandlingsblanketter ##################
 
 # Blanketten ska kunna knytas till anmälande enhet av kirurgi bland de enheter
 # man valt att inkludera
-ant_blk2_kir <- df[df$klinikbehorighet & compare_unit("b_anmsjh", "b_anmkli"), ] %>%
-    # Behandlingsblankett finns
-    filter(not_blank(a_bebehkirha_beskrivning) |
-           not_blank(a_bebehkirpri_beskrivning) |
-           not_blank(b_op1sjh)
-    ) %>%
-    ant("b_rappdatbeh")
+ant_blk2 <- df[compare_unit("b_anmsjh", "b_anmkli"), ] %>%
 
-
-
-################# Antal inrapporterade onkologiblanketter #################
-
-ant_blk2_onk <- df[df$klinikbehorighet,] %>%
-
-    # onk-datum kompletteras med datum från kir då det första saknas men skulle ha funnits
-    # om onk-blanketten varit införd (vilket den var först 2013)
-    mutate(b_onk_inrappdat2 = ifelse(is.na(b_onk_inrappdat),
+    # Det finns två rappdatum, räcker att ett av dem är ifyllt
+    mutate(b_beh_rappdat_kombinerat = ifelse(is.na(b_onk_inrappdat),
                                      as.character(b_rappdatbeh),
                                      as.character(b_onk_inrappdat))) %>%
-    # Behandlingsblankett finns
-    filter(
-        not_blank(b_stralsjh) |
-        not_blank(b_stralstart) |
-        not_blank(b_brachystart) |
-        not_blank(b_behmed)
-    ) %>%
-    # Blanketten kan knytas till inrapportörens klinik
+
+    # Blanketten kan knytas till inrapportörens klinik oavsett om det är
+    # kir eller onk
     mutate(b_onk_inrappklk2 = ifelse(is.na(b_onk_inrappklk),
                                      as.character(b_anmkli),
                                      as.character(b_onk_inrappklk)),
            b_onk_inrappsjh2 = ifelse(is.na(b_onk_inrappsjh),
                                      as.character(b_anmsjh),
                                      as.character(b_onk_inrappsjh))) %>%
-    filter(userunitcode == b_onk_inrappklk2, userparentunitcode == b_onk_inrappsjh2) %>%
-    ant("b_onk_inrappdat2")
+    slice(which(compare_unit("b_onk_inrappsjh2", "b_onk_inrappklk2"))) %>%
+
+    ant("b_beh_rappdat_kombinerat")
+
+
+
+################# Antal inrapporterade uppföljningsblanketter #################
+
+ant_blk3 <-  df[compare_unit("u_uppfsjh", "b_uppfkli"), ] %>%
+    ant("u_rappdatuppf")
+
+#
+#     slice(which(compare_unit("b_onk_inrappsjh2", "b_onk_inrappklk2"))) %>%
+#     ant("b_onk_inrappdat2")
 
 
 
@@ -449,8 +453,7 @@ ant_blk2_onk <- df[df$klinikbehorighet,] %>%
 #                   Spara ner allt till textfil med namnn output.html                    #
 #                                                                                        #
 ##########################################################################################
-enhetstext <- if (grepl("klinik",  param$belongs_to_unit, TRUE))   "Min klinik" else
-              if (grepl("sjukhus", param$belongs_to_unit, TRUE)) "Mitt sjukhus"
+
 
 #################################### Ändra inget här ####################################
 public_files <- "D:/R-Scripts/Väst/oc5buer/huvud-_och_halscancer/kpl/"
@@ -475,8 +478,9 @@ dfjson <- toJSON(indikatordefenitioner)
 mitten <- paste0("\t\t var ser =",     dfjson,
                  "\n\t\t var klin = ", klin,
                  "\n\t\t var diag =",  ant_blk1,
-                 "\n\t\t var beh=",    ant_blk2_kir,
-                 "\n\t\t var prim =",  ant_blk2_onk,
+                 "\n\t\t var beh=",    ant_blk2,
+                 "\n\t\t var prim =",  ant_blk3,
+                 "\n\t\t var urval =", "\'-\'",
                  "\n\t\t var year =",  current_year()$years_label,
                  "\n\t\t var hist_years_label =",  current_year()$hist_years_label
           )

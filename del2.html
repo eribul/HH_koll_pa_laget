@@ -30,7 +30,9 @@
 			$("#Diag").html(diag);
 			$("#Beh").html(beh);
 			$("#Prim").html(prim);
-			$("#mål").html("Måluppfyllelse för åtgärder avslutade " + year);
+			$("#blah").html("Avser inrapporteringsår " + year);
+			$("#mål").html("<h1>" + "Måluppfyllelse för åtgärder avslutade " + year + "</h1>");
+			$("#urval").html("Urval (kommer att visas här i nästa version av KPL): " + urval);
 			$("#intervall").html(hist_years_label);
  		});
  	</script>
@@ -41,6 +43,7 @@
  		<tr>
  			<td rowspan=2 class='margin'></td>
  			<td rowspan=2 class='dateclinic'>
+ 			    <div id="Blah"></div>
  				<div id="Klin">This text will change</div>
  			</td>
  			<td rowspan=2 class='nopat'>
@@ -50,13 +53,13 @@
  			</td>
  			<td rowspan=2 class='nopat'>
  				<div class = "nopat" id="Beh">This text will change</div>
- 				<div class="tooltip top" data-tooltip="Fr o m 2013 enhetens inrapporterade kirurgiblanketter. 2008-2012 blk 2 där behandlingen var kirurgi.">
- 				registrerade<br>kirurgiblanketter<br>&nbsp;</div>
+ 				<div class="tooltip top" data-tooltip="Antal inrapporterade behandlingsblaketter för kirurgi och onkologisk behandling (2 a + 2b).">
+ 				registrerade<br>behandlingsblanketter<br>&nbsp;</div>
  			</td>
  			<td rowspan=2 class='nopat'>
  				<div class = "nopat" id="Prim">This text will change</div>
- 				<div class="tooltip top" data-tooltip="Fr o m 2013 enhetens inrapporterade onkologiblanketter. 2008-2012 blk 2 där behandlingen var onkologi.">
- 				registrerade <br>onkologiblanketter<br>&nbsp;</div>
+ 				<div class="tooltip top" data-tooltip="Antal inrapporterade uppföljningsblanketter där kliniken är uppföljande klinik. ">
+ 				registrerade <br> uppföljningsblanketter<br>&nbsp;</div>
  			</td>
  			<td class='helppdf'>
  				<a class='infolink'><div><iframe src='{{url|.}}/Public/Files/Prostataregistret/npcr_kpl/help.html' id='helpWindow' style='width:100%;height:100%;border:0;overflow:visible;'></iframe></div></a>
@@ -72,7 +75,11 @@
  	<table id='bodyTable' class='bodyTable'>
    	<tr class='divider'>
  			<td class='margin'></td>
- 			<td colspan=2 class='indheadline'><div id="mål">This text will change</div></td>
+ 			<td colspan=6 class='indheadline'><div id="mål">This text will change</div></td>
+ 		</tr>
+ 		<tr height = "0%" class='divider'>
+ 			<td class='margin'></td>
+ 			<td colspan=2 class='indheadline'> <div id="urval">This text will change</div> </td>
  			<td class='indpat graytext'></td>
  			<td class='indpct'></td>
  			<td class='fig graytext'></td>

@@ -134,10 +134,10 @@ df[datum_variabler] <- lapply(df[datum_variabler],
 # Jämför alltid sjukhus
 # Jämför dessutom klinik om klk != NULL och klinik relevant enl param
 compare_unit <- function(sjh, klk = NULL) {
-    compare_sjh <- df$userparentunitcode == df[[sjh]]
+    compare_sjh <- as.numeric(df$userparentunitcode) == as.numeric(df[[sjh]])
     x <-
-        if (!is.null(klk) & grepl("klinik",  param$belongs_to_unit, TRUE)) {
-            compare_sjh & df$userunitcode == df[[klk]]
+        if (!is.null(klk) & grepl("klinik", param$belongs_to_unit, TRUE)) {
+            compare_sjh & as.numeric(df$userunitcode) == as.numeric(df[[klk]])
         } else{
             compare_sjh
         }

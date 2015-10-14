@@ -134,10 +134,10 @@ df[datum_variabler] <- lapply(df[datum_variabler],
 # Jämför alltid sjukhus
 # Jämför dessutom klinik om klk != NULL och klinik relevant enl param
 compare_unit <- function(sjh, klk = NULL) {
-    compare_sjh <- as.numeric(df$userparentunitcode) == as.numeric(df[[sjh]])
+    compare_sjh <- as.numeric(df$userparentunitcode) == suppressWarnings(as.numeric(df[[sjh]]))
     x <-
         if (!is.null(klk)) {
-            compare_sjh & as.numeric(df$userunitcode) == as.numeric(df[[klk]])
+            compare_sjh & as.numeric(df$userunitcode) == suppressWarnings(as.numeric(df[[klk]]))
         } else{
             compare_sjh
         }
@@ -446,6 +446,25 @@ ant_blk3 <-  df[compare_unit("u_uppfsjh", "b_uppfkli"), ] %>%
 
 ##########################################################################################
 #                                                                                        #
+#                             Text som beskriver gjort uravl                             #
+#                                                                                        #
+##########################################################################################
+
+min_enhet <- if (grepl("sjukhus", param$belongs_to_unit, TRUE)) {
+    unlist(strsplit(unique(df$userposname), " - "))[2]
+} else {
+    paste(unlist(strsplit(unique(df$userposname), " - "))[2:3], collapse = " - ")
+}
+
+unit_based_on <- paste(unlist(strsplit(param$belongs_to_unit, " ", fixed = TRUE))[-(1:2)], collapse = " ")
+
+urvals_label <- paste0("\"", tolower(gsub("[[:digit:]][[:space:]]", "",
+                                          paste(param$diagnos, collapse = ", "))),
+                       "<br> där ", min_enhet, " ", unit_based_on, "\"")
+
+
+##########################################################################################
+#                                                                                        #
 #                   Spara ner allt till textfil med namnn output.html                    #
 #                                                                                        #
 ##########################################################################################
@@ -476,7 +495,7 @@ mitten <- paste0("\t\t var ser =",     dfjson,
                  "\n\t\t var diag =",  ant_blk1,
                  "\n\t\t var beh=",    ant_blk2,
                  "\n\t\t var prim =",  ant_blk3,
-                 "\n\t\t var urval =", "\'-\'",
+                 "\n\t\t var urval =", urvals_label,
                  "\n\t\t var year =",  current_year()$years_label,
                  "\n\t\t var hist_years_label =",  current_year()$hist_years_label
           )

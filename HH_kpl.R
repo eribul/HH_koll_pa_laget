@@ -136,7 +136,7 @@ df[datum_variabler] <- lapply(df[datum_variabler],
 compare_unit <- function(sjh, klk = NULL) {
     compare_sjh <- as.numeric(df$userparentunitcode) == as.numeric(df[[sjh]])
     x <-
-        if (!is.null(klk) & grepl("klinik", param$belongs_to_unit, TRUE)) {
+        if (!is.null(klk)) {
             compare_sjh & as.numeric(df$userunitcode) == as.numeric(df[[klk]])
         } else{
             compare_sjh
@@ -441,10 +441,6 @@ ant_blk2 <- df[compare_unit("b_anmsjh", "b_anmkli"), ] %>%
 
 ant_blk3 <-  df[compare_unit("u_uppfsjh", "b_uppfkli"), ] %>%
     ant("u_rappdatuppf")
-
-#
-#     slice(which(compare_unit("b_onk_inrappsjh2", "b_onk_inrappklk2"))) %>%
-#     ant("b_onk_inrappdat2")
 
 
 

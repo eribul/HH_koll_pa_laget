@@ -12,7 +12,7 @@ is.inca <- function(){
 if (!is.inca()) {
     setwd("~/Documents/huvud_hals/koll_pa_laget")
     options(register = "Huvud- och halscancer")
-    df <- read.csv("incadata.csv")
+    df <- read.csv("testdata/incadata.csv")
 }
 
 #########################################################################################
@@ -27,6 +27,10 @@ if (!is.inca()) library(infuser)
 
 names(df) <- tolower(names(df))
 
+## Gör alla faktorvariabler till character
+faktorer <- sapply(df, is.factor)
+df[faktorer] <- lapply(df[faktorer], as.character)
+
 
 #########################################################################################
 #                                                                                       #
@@ -34,11 +38,18 @@ names(df) <- tolower(names(df))
 #                                                                                       #
 #########################################################################################
 
+# Datum och årtal
+as.date         <- function(x)    as.Date(x, format = "%Y-%m-%d")
+as.year         <- function(x)    as.numeric(format(as.date(x), format = "%Y"))
+as.month        <- function(x)    as.numeric(format(as.date(x), format = "%m"))
+year_interval   <- function(a, b) paste0("'", a, " - ", b, "'")
+in_current_year <- function(x)    !is.na(x) & as.year(x) %in% current_year()$years_num
+
 
 # Skapa ledtid
-# Negativa tider samt tider länre än ett år exkluderas
+# Negativa tider samt tider längre än ett år exkluderas
 lt <- function(from, to){
-    lt <- as.numeric(to - from)
+    lt <- as.date(to) - as.date(from)
     lt[!(lt %in% 0:365)] <- NA
     lt
 }
@@ -49,6 +60,18 @@ first_first <- function(x){
     if (all(is.na(x))) NA else if (is.na(x[1])) FALSE else x[1] == min(x, na.rm = TRUE)
 }
 
+# Skriv ut felmeddeladen om årtal omkastade
+stop_if_wrong_date_order <- function(from_year, to_year) {
+    if (from_year > to_year) {
+        write(paste('<strong> <font color="red"> Du har valt ett ogiltigt',
+                    'årsintervall! Förmodligen bör du byta plats på de båda',
+                    'årtalen! </forn></strong>'),
+              file = file( "output.html", "w", encoding = "UTF-8"))
+        q()
+    }
+}
+
+
 # Funktion för att hitta relevant årtal. Nytt år tas först fr o m 1 juli
 # eller enligt parameterval om sådant finns
 current_year <- function(date = Sys.Date()) {
@@ -57,72 +80,26 @@ current_year <- function(date = Sys.Date()) {
     # använd annars innevarande år fr o m juli, annars föregående år
     if (exists("param") && !is.null(param$year_from) && param$year_from != "1900") {
         from_year <- as.numeric(param$year_from)
-        to_year  <- as.numeric(param$year_to)
-        if (from_year > to_year) {
-            fd <- file( "output.html", "w", encoding = "UTF-8" )
-            write(paste('<strong> <font color="red"> Du har valt ett ogiltigt',
-                        'årsintervall! Förmodligen bör du byta plats på de båda',
-                        'årtalen! </forn></strong>', file = fd )
-            )
-            q()
-        }
-    } else {
-        date <- as.Date(date)
-        year <- as.numeric(format(date, format = "%Y"))
-        month <- as.numeric(format(date, format = "%Y"))
-        if (month <= 6 ) {
-            to_year <- year - 1
-        } else{
-            to_year <- year
-        }
-        from_year <- to_year
-    }
+        to_year   <- as.numeric(param$year_to)
+        stop_if_wrong_date_order(from_year, to_year)
+
+    } else
+        from_year <- to_year <- if (as.month(date) <= 6) as.year(date) - 1 else as.year(date)
 
     # Ett antal olika årsangivelser i retur
     list(from_year        = from_year,
          to_year          = to_year,
-         hist_years       = if (from_year == to_year) seq.int(to_year - 4, to_year - 1, 1)
+         hist_years       = if (from_year == to_year)
+                                 seq.int(to_year - 4, to_year - 1, 1)
                             else seq.int(to_year - 3, to_year, 1),
          years_num        = seq.int(from_year, to_year, 1),
          years_label      = if (from_year == to_year) from_year
-                            else paste0("'", from_year, " - ", to_year, "'"),
+                            else year_interval(from_year, to_year),
          hist_years_label = if (from_year == to_year)
-                                paste0("'", to_year - 4, " - ", to_year - 1, "'")
-                            else paste0("'", to_year - 3, " - ", to_year, "'")
-
+                                 year_interval(to_year - 4, to_year - 1)
+                            else year_interval(to_year - 3, to_year)
     )
 }
-
-#########################################################################################
-#                                                                                       #
-#                                 Korrekta datumformat                                  #
-#                                                                                       #
-#########################################################################################
-
-## Gör alla faktorvariabler till character
-faktorer <- sapply(df, is.factor)
-df[faktorer] <- lapply(df[faktorer], as.character)
-
-## Datum ska vara datum
-datum_variabler <- c("a_rappdatanm",
-                     "b_rappdatbeh",
-                     "b_onk_inrappdat",
-                     "a_remdat",
-                     "a_diadat",
-                     "a_cytdat",
-                     "a_cytpad",
-                     "a_besok",
-                     "a_besldat",
-                     "b_op1dat",
-                     "b_op2dat",
-                     "b_brachystart",
-                     "b_stralstart",
-                     "b_medstart",
-                     "u_rappdatuppf"
-                )
-df[datum_variabler] <- lapply(df[datum_variabler],
-                             function(x) as.Date(x, format = "%Y-%m-%d")
-                       )
 
 
 
@@ -134,38 +111,35 @@ df[datum_variabler] <- lapply(df[datum_variabler],
 # Jämför alltid sjukhus
 # Jämför dessutom klinik om klk != NULL och klinik relevant enl param
 compare_unit <- function(sjh, klk = NULL) {
-    compare_sjh <- as.numeric(df$userparentunitcode) == suppressWarnings(as.numeric(df[[sjh]]))
-    x <-
-        if (!is.null(klk)) {
-            compare_sjh & as.numeric(df$userunitcode) == suppressWarnings(as.numeric(df[[klk]]))
-        } else{
-            compare_sjh
-        }
-    x[is.na(x)] <- FALSE
-    x
+    cmp <- function(env_code, unit){
+        if (is.null(unit)) TRUE
+        else (!is.na(df[[unit]]) & as.numeric(df[[env_code]]) == suppressWarnings(as.numeric(df[[unit]])))
+    }
+    cmp("userparentunitcode", sjh) & cmp("userunitcode", klk)
 }
 
 # enhetstillhörighet styrd av parameterval
 df$klinikbehorighet <-
         switch(param$belongs_to_unit,
           "min klinik registrerat anmälningsblanketten" =
-              compare_unit("a_anmsjh", "a_anmkli"),
+              compare_unit("a_anmsjh",       "a_anmkli"),
           "mitt sjukhus fattat behandlingsbeslut" =
               compare_unit("a_beslsjh"),
           "min klinik opererat" =
-              compare_unit("b_op1sjh", "b_op1kli") |
-              compare_unit("b_op2sjh", "b_op2kli") |
-              compare_unit("b_ophogersjh", "b_ophogerkli") |
+              compare_unit("b_op1sjh",       "b_op1kli") |
+              compare_unit("b_op2sjh",       "b_op2kli") |
+              compare_unit("b_ophogersjh",   "b_ophogerkli") |
               compare_unit("b_opvanstersjh", "b_opvansterkli"),
           "min klinik utfört onkologisk behandling" =
-              compare_unit("b_brachysjh", "b_brachykli") |
-              compare_unit("b_stralsjh", "b_stralkli") |
-              compare_unit("b_medsjh", "b_medkli"),
+              compare_unit("b_brachysjh",    "b_brachykli") |
+              compare_unit("b_stralsjh",     "b_stralkli") |
+              compare_unit("b_medsjh",       "b_medkli"),
           "min klinik bidragit till INCA-rapportering" =
               as.logical(df$registerpostbehorighet)
         )
 df$klinikbehorighet[is.na(df$klinikbehorighet)] <- FALSE
 df$regionbehorighet <- as.logical(df$regionbehorighet)
+
 
 #########################################################################################
 #                                                                                       #
@@ -173,48 +147,51 @@ df$regionbehorighet <- as.logical(df$regionbehorighet)
 #                                                                                       #
 #########################################################################################
 
+pmin2 <- function(...) pmin(..., na.rm = TRUE)
 
 df <-
     dplyr::mutate(df,
 
         ## Hjälpvariabler
         # Datum för första icke kirurgiska behandling
-        b_behstart = pmin(b_brachystart, b_stralstart, b_medstart, na.rm = TRUE),
+        b_behstart             = pmin2(b_brachystart, b_stralstart, b_medstart),
         # Datum för första kirurgiska behandling
-        opdat = pmin(b_op1dat, b_op2dat, na.rm = TRUE),
+        opdat                  = pmin2(b_op1dat, b_op2dat),
         # Datum för förata behandling (oavsett kir eller icke kir)
-        behandlingsstart = pmin(b_behstart, opdat, na.rm = TRUE),
+        behandlingsstart       = pmin2(b_behstart, opdat),
         # ledtid för indikator nr 3, 4, 5
-        lt3 = lt(a_besldat, behandlingsstart),
+        lt3                    = lt(a_besldat, behandlingsstart),
         # Multidiciplinär konferens (läpp exkuderas)
         a_multkonf_beskrivning = ifelse(a_multkonf_beskrivning != "" &
                                         a_icd10_gruppnamn  !=  "1 Läpp",
                                         a_multkonf_beskrivning, NA),
 
         ## Årtalsvariabler
-        ar_remiss = format(a_remdat, format = "%Y"),
-        ar_behandlingsstart = format(behandlingsstart, format = "%Y"),
-        ar_beslut = format(a_besldat, format = "%Y"),
-        ar_besok  = format(a_besok, format = "%Y"),
-        ar_cytdat = format(a_cytdat, format = "%Y"),
-        ar_cytpad = format(a_cytpad, format = "%Y")
-        )
+        ar_remiss              = as.year(a_remdat),
+        ar_behandlingsstart    = as.year(behandlingsstart),
+        ar_beslut              = as.year(a_besldat),
+        ar_besok               = as.year(a_besok),
+        ar_cytdat              = as.year(a_cytdat),
+        ar_cytpad              = as.year(a_cytpad)
+    )
 
-df <- dplyr::mutate(df,
+
+df <-
+    dplyr::mutate(df,
 
         ## Indikatorvariabler
-        ind1  = lt(a_remdat, behandlingsstart)              <= 40,
-        ind2  = lt(a_besok, behandlingsstart)               <= 35,
-        ind3  = lt3                                         <= 15,
+        ind1  = lt(a_remdat, behandlingsstart)                    <= 40,
+        ind2  = lt(a_besok,  behandlingsstart)                    <= 35,
+        ind3  = lt3                                               <= 15,
         ind4  = ifelse(apply(data.frame(df$b_behstart, df$opdat),
-                    1, first_first), lt3, NA)               <= 20,
+                    1, first_first), lt3, NA)                     <= 20,
         ind5  = ifelse(apply(data.frame(df$opdat, df$b_behstart),
-                    1, first_first), lt3, NA)               <= 12,
-        ind6 =  lt(a_remdat, a_besldat)                     <= 25,
-        ind7 =  lt(a_remdat, a_besok)                       <= 5,
-        ind8 =  lt(a_besok, a_cytdat)                       <= 3,
-        ind9 =  lt(a_cytdat, a_cytpad)                      <= 3,
-        ind10 = a_multkonf_beskrivning                      == "Ja"
+                    1, first_first), lt3, NA)                     <= 12,
+        ind6  = lt(a_remdat, a_besldat)                           <= 25,
+        ind7  = lt(a_remdat, a_besok)                             <= 5,
+        ind8  = lt(a_besok,  a_cytdat)                            <= 3,
+        ind9  = lt(a_cytdat, a_cytpad)                            <= 3,
+        ind10 = a_multkonf_beskrivning                            == "Ja"
     )
 
 
@@ -225,8 +202,7 @@ df <- dplyr::mutate(df,
 #                                                                                       #
 #########################################################################################
 
-indikator <- function(ind, ar, name, l1 = 50, l2 = 80,
-                      description = ""){
+indikator <- function(ind, ar, name, l1 = 50, l2 = 80, description = ""){
 
     # Indikator. kan fallet klassas som "i år"
     iar <- ar %in% current_year()$years_num
@@ -243,12 +219,8 @@ indikator <- function(ind, ar, name, l1 = 50, l2 = 80,
 
 
     ## Hjälpfunktioner för att beräkna täljare och nämnare baserat på nivå
-    num <- function(behorighet = TRUE){
-        sum(ind[behorighet & iar], na.rm = TRUE)
-    }
-    den <- function(behorighet = TRUE){
-        sum(!is.na(ind[behorighet & iar]))
-    }
+    num <- function(behorighet = TRUE) sum(       ind[behorighet & iar], na.rm = TRUE)
+    den <- function(behorighet = TRUE) sum(!is.na(ind[behorighet & iar]))
 
     ## Konstruera objekt med all info för ledtiden
     data.frame(
@@ -388,19 +360,13 @@ indikatordefenitioner <- indikatordefenitioner[c(7, 8, 9, 2, 6, 3, 4, 5, 1, 10),
 
 
 # Antal fall nuvarande år för angiven variabel
-ant <- function(x, var){
-    var <- as.Date(x[[var]])
-    var <- as.numeric(format(var, format = "%Y"))
-    nrow(x[!is.na(var) & var %in% current_year()$years_num, ])
-}
-
-not_blank <- function(x) {
-    !is.na(x) & as.character(x) != ""
-}
+ant       <- function(x, var) nrow(x[in_current_year(x[[var]]), ])
+not_blank <- function(x) !is.na(x) & as.character(x) != ""
 
 
 ############################# Aktuell klinik ##############################
-klin      <- paste0("\"", "Total inrapporteringsaktivitet ", current_year()$years_label, " för: <br>",
+klin      <- paste0("\"", "Total inrapporteringsaktivitet ",
+                    current_year()$years_label, " för: <br>",
                     unique(df$userposname), "\"")
 
 
@@ -414,27 +380,12 @@ ant_blk1  <- df[compare_unit("a_anmsjh", "a_anmkli"), ] %>%
 
 ################# Antal inrapporterade behandlingsblanketter ##################
 
-# Blanketten ska kunna knytas till anmälande enhet av kirurgi bland de enheter
-# man valt att inkludera
-ant_blk2 <- df[compare_unit("b_anmsjh", "b_anmkli"), ] %>%
-
-    # Det finns två rappdatum, räcker att ett av dem är ifyllt
-    mutate(b_beh_rappdat_kombinerat = ifelse(is.na(b_onk_inrappdat),
-                                     as.character(b_rappdatbeh),
-                                     as.character(b_onk_inrappdat))) %>%
-
-    # Blanketten kan knytas till inrapportörens klinik oavsett om det är
-    # kir eller onk
-    mutate(b_onk_inrappklk2 = ifelse(is.na(b_onk_inrappklk),
-                                     as.character(b_anmkli),
-                                     as.character(b_onk_inrappklk)),
-           b_onk_inrappsjh2 = ifelse(is.na(b_onk_inrappsjh),
-                                     as.character(b_anmsjh),
-                                     as.character(b_onk_inrappsjh))) %>%
-    slice(which(compare_unit("b_onk_inrappsjh2", "b_onk_inrappklk2"))) %>%
-
-    ant("b_beh_rappdat_kombinerat")
-
+# Blanketten kan avse antingen kirurgi eller onkologisk behandling
+ant_blk2 <- df %>%
+    filter(userparentunitcode == b_onk_inrappsjh | userparentunitcode == b_anmsjh,
+           userunitcode       == b_onk_inrappklk | userunitcode       == b_anmkli,
+           in_current_year(b_rappdatbeh) | in_current_year(b_onk_inrappdat)) %>%
+    nrow()
 
 
 ################# Antal inrapporterade uppföljningsblanketter #################
@@ -450,15 +401,13 @@ ant_blk3 <-  df[compare_unit("u_uppfsjh", "b_uppfkli"), ] %>%
 #                                                                                        #
 ##########################################################################################
 
-min_enhet <- if (grepl("sjukhus", param$belongs_to_unit, TRUE)) {
-    unlist(strsplit(unique(df$userposname), " - "))[2]
-} else {
-    paste(unlist(strsplit(unique(df$userposname), " - "))[2:3], collapse = " - ")
-}
+split   <- function(x, delim = " ") unlist(strsplit(unique(x), delim, fixed = TRUE))
+combine <- function(x, delim = " ") paste(x, collapse = delim)
 
-unit_based_on <- paste(unlist(strsplit(param$belongs_to_unit, " ", fixed = TRUE))[-(1:2)], collapse = " ")
-
-urvals_label <- paste0("\"", tolower(gsub("[[:digit:]][[:space:]]", "",
+index         <- if (grepl("sjukhus", param$belongs_to_unit, TRUE)) 2 else 2:3
+min_enhet     <- split(df$userposname, " - ")[index] %>% combine(" - ")
+unit_based_on <- split(param$belongs_to_unit)[-(1:2)] %>% combine()
+urvals_label  <- paste0("\"", tolower(gsub("[[:digit:]][[:space:]]", "",
                                           paste(param$diagnos, collapse = ", "))),
                        "<br> där ", min_enhet, " ", unit_based_on, "\"")
 
@@ -471,40 +420,32 @@ urvals_label <- paste0("\"", tolower(gsub("[[:digit:]][[:space:]]", "",
 
 
 #################################### Ändra inget här ####################################
-public_files <- "D:/R-Scripts/Väst/oc5buer/huvud-_och_halscancer/kpl/"
 
 if (!is.inca()) {
     # På egen dator genererar vi del1 och del2 för att kunna lägga över i INCAs public files
-    # (där ska sökvägen vara relativ)
-    writeLines(infuse("del1.html"), "del1-inca.txt")
-    writeLines(infuse("del2.html"), "del2-inca.txt")
-    writeLines(infuse("kpl_klinik_region_riket-template.js"), "kpl_klinik_region_riket.js")
-    del1 <- infuse("del1.html", url = public_files)
-    del2 <- infuse("del2.html", url = public_files)
+    writeLines(infuse("templates/del1.html"), "files_to_copy_to_servers/del1-inca.txt")
+    writeLines(infuse("templates/del2.html"), "files_to_copy_to_servers/del2-inca.txt")
+    writeLines(infuse("templates/kpl_klinik_region_riket-template.js"), "files_to_copy_to_servers/kpl_klinik_region_riket.js")
 } else{
-
     # läs in del 1 och 2 från INCA:s public files om vi befinner oss i INCA
+    public_files <- "D:/R-Scripts/Väst/oc5buer/huvud-_och_halscancer/kpl/"
     del1 <- readChar(paste0(public_files, "del1-inca.txt"), 1e5)
     del2 <- readChar(paste0(public_files, "del2-inca.txt"), 1e8)
+
+    mitten <- paste0("\t\t var ser =",                 toJSON(indikatordefenitioner),
+                     "\n\t\t var klin = ",             klin,
+                     "\n\t\t var diag =",              ant_blk1,
+                     "\n\t\t var beh=",                ant_blk2,
+                     "\n\t\t var prim =",              ant_blk3,
+                     "\n\t\t var urval =",             urvals_label,
+                     "\n\t\t var year =",              current_year()$years_label,
+                     "\n\t\t var hist_years_label =",  current_year()$hist_years_label
+    )
+
+    ## Här måste vi vara försiktiga med encodings. Olika delar får olika encodings!!!
+    cat(del1,              file = file('output.html',       encoding = ''     )               )
+    cat("\n\t<script>\n",  file =      'output.html',                            append = TRUE)
+    cat(mitten,            file = file('output.html', 'at', encoding = 'UTF-8'), append = TRUE)
+    cat("\n\t</Script>\n", file = file('output.html', 'at', encoding = 'UTF-8'), append = TRUE)
+    cat(del2,              file = file('output.html', 'at', encoding = ''     ), append = TRUE)
 }
-
-
-dfjson <- toJSON(indikatordefenitioner)
-mitten <- paste0("\t\t var ser =",     dfjson,
-                 "\n\t\t var klin = ", klin,
-                 "\n\t\t var diag =",  ant_blk1,
-                 "\n\t\t var beh=",    ant_blk2,
-                 "\n\t\t var prim =",  ant_blk3,
-                 "\n\t\t var urval =", urvals_label,
-                 "\n\t\t var year =",  current_year()$years_label,
-                 "\n\t\t var hist_years_label =",  current_year()$hist_years_label
-          )
-
-## Här måste vi vara försiktiga med encodings. Olika delar får olika encodings!!!
-cat(del1, file = file('output.html', encoding = ''))
-cat("\n\t<script>\n", file = 'output.html', append = TRUE)
-cat(mitten, file = file('output.html', 'at', encoding = 'UTF-8'), append = TRUE)
-cat("\n\t</Script>\n", file = file('output.html', 'at', encoding = 'UTF-8'), append = TRUE)
-cat(del2, file = file('output.html', 'at', encoding = ''), append = TRUE)
-
-

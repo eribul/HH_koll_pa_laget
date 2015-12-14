@@ -1,19 +1,5 @@
 .Rproj.user
 .Rhistory
 .RData
-
-
-KPLINCA_original_fran_chenyang/*
-inca_documents/*
-incadata.csv
-*.xlsx
-*.png
-output.html
-*.doc
-(R) N58 Koll*
-sql_frageregister.sql
-
-
-del1-inca.txt
-del2-inca.txt
-kpl_klinik_region_riket.js
+testdata/*
+files_to_copy_to_servers/*

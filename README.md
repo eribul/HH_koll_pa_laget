@@ -5,8 +5,8 @@ Några av filerna ska synkas till R-servern, några till Public files och några
 
 
 ## Synkas med R-servern
-* `del1-inca.txt` (denna fil genereras lokalt från filen `del1.html` men versionshanteras inte i sig själv)
-* `del2-inca.txt` (denna fil genereras lokalt från filen `del2.html` men versionshanteras inte i sig själv)
+* `del1-inca.txt` (denna fil genereras lokalt från filen `templates/del1.html` men versionshanteras inte i sig själv)
+* `del2-inca.txt` (denna fil genereras lokalt från filen `templates/del2.html` men versionshanteras inte i sig själv)
 * `HH_kpl.R`
 
 ## Synkas med Public files

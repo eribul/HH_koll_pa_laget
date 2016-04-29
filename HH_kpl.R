@@ -93,7 +93,7 @@ current_year <- function(date = Sys.Date(), first_historic_year = 2008) {
     # Om inga parameterval gjorts väljs innevarande år fr o m 1 juli,
     # dessförinnan väljs föregående år.
     } else
-        from_year <- to_year <- if (as.month(date) <= 6) as.year(date) - 1 else as.year(date)
+        from_year <- to_year <- if (as.month(date) <= 4) as.year(date) - 1 else as.year(date)
 
     # Historiska år
     hist_years <-

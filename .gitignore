@@ -3,3 +3,4 @@
 .RData
 testdata/*
 files_to_copy_to_servers/*
+output.html

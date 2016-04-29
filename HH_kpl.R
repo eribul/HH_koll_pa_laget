@@ -42,7 +42,13 @@ df[faktorer] <- lapply(df[faktorer], as.character)
 as.date         <- function(x)    as.Date(x, format = "%Y-%m-%d")
 as.year         <- function(x)    as.numeric(format(as.date(x), format = "%Y"))
 as.month        <- function(x)    as.numeric(format(as.date(x), format = "%m"))
-year_interval   <- function(a, b) paste0("'", a, " - ", b, "'")
+year_interval   <- function(xs) {
+    if (all(is.na(xs))) {
+      "'(historik saknas)'"
+    } else if (length(na.omit(unique(xs))) == 1) {
+      paste0("'", na.omit(unique(xs)), "'")
+    } else paste0("'", paste(range(xs, na.rm = TRUE), collapse = " - "), "'")
+}
 in_current_year <- function(x)    !is.na(x) & as.year(x) %in% current_year()$years_num
 
 
@@ -74,7 +80,8 @@ stop_if_wrong_date_order <- function(from_year, to_year) {
 
 # Funktion för att hitta relevant årtal. Nytt år tas först fr o m 1 juli
 # eller enligt parameterval om sådant finns
-current_year <- function(date = Sys.Date()) {
+#' @param first_historic_year anger första möjliga året att ta historiska data för
+current_year <- function(date = Sys.Date(), first_historic_year = 2008) {
 
     # Använd värden från parameterval om sådana finns,
     # använd annars innevarande år fr o m juli, annars föregående år
@@ -83,21 +90,31 @@ current_year <- function(date = Sys.Date()) {
         to_year   <- as.numeric(param$year_to)
         stop_if_wrong_date_order(from_year, to_year)
 
+    # Om inga parameterval gjorts väljs innevarande år fr o m 1 juli,
+    # dessförinnan väljs föregående år.
     } else
         from_year <- to_year <- if (as.month(date) <= 6) as.year(date) - 1 else as.year(date)
+
+    # Historiska år
+    hist_years <-
+        if (from_year == to_year)
+            seq.int(to_year - 4, to_year - 1, 1)
+        else seq.int(to_year - 3, to_year, 1)
+
+    # Historiska år "trunkeras" om de inkluderar för tidiga år.
+    # Vi vill dock behålla längden på vektorn så tar inte bort dem helt
+    if (!(is.null(first_historic_year)))
+        hist_years[hist_years < first_historic_year] <- NA
+
 
     # Ett antal olika årsangivelser i retur
     list(from_year        = from_year,
          to_year          = to_year,
-         hist_years       = if (from_year == to_year)
-                                 seq.int(to_year - 4, to_year - 1, 1)
-                            else seq.int(to_year - 3, to_year, 1),
+         hist_years       = hist_years,
          years_num        = seq.int(from_year, to_year, 1),
          years_label      = if (from_year == to_year) from_year
-                            else year_interval(from_year, to_year),
-         hist_years_label = if (from_year == to_year)
-                                 year_interval(to_year - 4, to_year - 1)
-                            else year_interval(to_year - 3, to_year)
+                            else year_interval(seq.int(from_year, to_year)),
+         hist_years_label = year_interval(hist_years)
     )
 }
 
@@ -214,7 +231,6 @@ indikator <- function(ind, ar, name, l1 = 50, l2 = 80, description = ""){
         summarise(ind = mean(ind, na.rm = TRUE) * 100) %>%
         filter(ar %in% current_year()$hist_years) %>%
         .$ind
-    h[h %in% c(NA, NaN)] <- 0
     historiska_ar <- h
 
 
@@ -449,3 +465,4 @@ if (!is.inca()) {
     cat("\n\t</Script>\n", file = file('output.html', 'at', encoding = 'UTF-8'), append = TRUE)
     cat(del2,              file = file('output.html', 'at', encoding = ''     ), append = TRUE)
 }
+
